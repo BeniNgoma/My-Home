@@ -1,0 +1,20 @@
+{
+  "name": "caretrack",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "mobile": "npm run start --workspace=apps/mobile",
+    "web": "npm run dev --workspace=apps/web",
+    "shared": "npm run build --workspace=packages/shared"
+  },
+  "dependencies": {
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3"
+  }
+}

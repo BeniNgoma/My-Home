@@ -1,0 +1,54 @@
+{
+  "expo": {
+    "name": "CareTrack",
+    "slug": "caretrack-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#2563EB"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.caretrack.mobile",
+      "infoPlist": {
+        "NSCameraUsageDescription": "CareTrack nécessite l'accès à la caméra pour prendre des photos lors du pointage.",
+        "NSLocationWhenInUseUsageDescription": "CareTrack nécessite votre position GPS pour valider les pointages."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#2563EB"
+      },
+      "package": "com.caretrack.mobile",
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION"
+      ]
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "CareTrack nécessite l'accès à la caméra pour les pointages."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "CareTrack utilise votre position pour valider les pointages."
+        }
+      ]
+    ],
+    "scheme": "caretrack",
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
