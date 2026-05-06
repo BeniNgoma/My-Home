@@ -5,8 +5,8 @@ import {
 } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { supabase } from '../../../lib/supabase'
-import { formatDuration } from '@/lib/shared'
-import type { TimeEntryWithRelations } from '@/lib/shared'
+import { formatDuration } from '../../../lib/shared'
+import type { TimeEntryWithRelations } from '../../../lib/shared'
 
 const STATUS_COLORS = {
   active: '#F59E0B',
