@@ -13,16 +13,26 @@ export default function LoginPage() {
     setError('')
     setLoading(true)
 
-    const res = await fetch('/api/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
-    })
+    const supabase = createClient()
 
-    const data = await res.json()
+    const { data, error: authError } = await supabase.auth.signInWithPassword({ email, password })
 
-    if (!res.ok) {
-      setError(data.error || 'Erreur de connexion')
+    if (authError) {
+      setError(authError.message)
+      setLoading(false)
+      return
+    }
+
+    // Verify admin role (reads own profile via RLS)
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', data.user.id)
+      .single()
+
+    if (profile?.role !== 'admin') {
+      await supabase.auth.signOut()
+      setError('Accès réservé aux administrateurs.')
       setLoading(false)
       return
     }
