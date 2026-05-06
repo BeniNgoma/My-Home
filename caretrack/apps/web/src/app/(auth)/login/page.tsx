@@ -18,19 +18,15 @@ export default function LoginPage() {
     const { data, error: authError } = await supabase.auth.signInWithPassword({ email, password })
 
     if (authError) {
-      setError(authError.message)
+      setError('Email ou mot de passe incorrect.')
       setLoading(false)
       return
     }
 
-    // Verify admin role (reads own profile via RLS)
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', data.user.id)
-      .single()
-
-    if (profile?.role !== 'admin') {
+    // Role is available directly in the JWT response — no extra round-trip.
+    // The dashboard layout enforces the same check server-side for security.
+    const role = data.user.user_metadata?.role
+    if (role !== 'admin') {
       await supabase.auth.signOut()
       setError('Accès réservé aux administrateurs.')
       setLoading(false)
