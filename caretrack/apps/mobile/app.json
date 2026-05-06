@@ -49,6 +49,12 @@
     "scheme": "caretrack",
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "63682e06-6d23-4aa4-a263-815ce57863b9"
+      }
+    },
+    "owner": "beningoma"
   }
 }

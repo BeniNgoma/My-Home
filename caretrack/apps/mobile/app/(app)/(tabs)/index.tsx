@@ -6,7 +6,7 @@ import {
 import { useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { supabase } from '../../../lib/supabase'
-import type { Client, TimeEntry } from '@caretrack/shared'
+import type { Client, TimeEntry } from '@/lib/shared'
 
 interface ClientWithSession extends Client {
   active_entry?: TimeEntry

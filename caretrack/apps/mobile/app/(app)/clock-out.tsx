@@ -7,7 +7,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router'
 import { CameraView, useCameraPermissions } from 'expo-camera'
 import * as Location from 'expo-location'
 import { supabase } from '../../lib/supabase'
-import { haversineDistance, formatDuration } from '@caretrack/shared'
+import { haversineDistance, formatDuration } from '@/lib/shared'
 
 const GPS_ALERT_THRESHOLD_METERS = 500
 

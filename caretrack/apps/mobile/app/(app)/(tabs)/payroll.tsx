@@ -5,8 +5,8 @@ import {
 } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { supabase } from '../../../lib/supabase'
-import { formatDuration, formatCurrency } from '@caretrack/shared'
-import type { TimeEntryWithRelations, Profile } from '@caretrack/shared'
+import { formatDuration, formatCurrency } from '@/lib/shared'
+import type { TimeEntryWithRelations, Profile } from '@/lib/shared'
 
 interface ClientSummary {
   client_id: string
