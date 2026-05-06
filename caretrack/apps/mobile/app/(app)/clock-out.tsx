@@ -6,10 +6,18 @@ import {
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { CameraView, useCameraPermissions } from 'expo-camera'
 import * as Location from 'expo-location'
+import * as FileSystem from 'expo-file-system'
 import { supabase } from '../../lib/supabase'
 import { haversineDistance, formatDuration } from '../../lib/shared'
 
 const GPS_ALERT_THRESHOLD_METERS = 500
+
+function base64ToUint8Array(base64: string): Uint8Array {
+  const binary = atob(base64)
+  const bytes = new Uint8Array(binary.length)
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
+  return bytes
+}
 
 export default function ClockOutScreen() {
   const { entry_id, client_name } = useLocalSearchParams<{ entry_id: string; client_name: string }>()
@@ -63,24 +71,26 @@ export default function ClockOutScreen() {
         gpsAlert = gpsDistance > GPS_ALERT_THRESHOLD_METERS
       }
 
-      const { data: { user: currentUser } } = await supabase.auth.getUser()
-      const filename = `${currentUser!.id}_${Date.now()}_${entry?.client_id}.jpg`
-      const response = await fetch(photo.uri)
-      const blob = await response.blob()
+      // Read photo as base64 via expo-file-system (avoids fetch on local file:// URI)
+      const base64 = await FileSystem.readAsStringAsync(photo.uri, {
+        encoding: FileSystem.EncodingType.Base64,
+      })
+      const bytes = base64ToUint8Array(base64)
+
+      const filename = `${user.id}_${Date.now()}_${entry?.client_id}.jpg`
       const { error: uploadError } = await supabase.storage
         .from('clock-out-photos')
-        .upload(filename, blob, { contentType: 'image/jpeg' })
+        .upload(filename, bytes, { contentType: 'image/jpeg' })
       if (uploadError) throw uploadError
 
       const { data: { publicUrl } } = supabase.storage
         .from('clock-out-photos')
         .getPublicUrl(filename)
 
-      const clockOutAt = new Date().toISOString()
       const { data: updated, error: updateError } = await supabase
         .from('time_entries')
         .update({
-          clock_out_at: clockOutAt,
+          clock_out_at: new Date().toISOString(),
           clock_out_photo_url: publicUrl,
           clock_out_latitude: loc.coords.latitude,
           clock_out_longitude: loc.coords.longitude,

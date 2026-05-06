@@ -6,10 +6,18 @@ import {
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { CameraView, useCameraPermissions } from 'expo-camera'
 import * as Location from 'expo-location'
+import * as FileSystem from 'expo-file-system'
 import { supabase } from '../../lib/supabase'
 import { haversineDistance } from '../../lib/shared'
 
 const GPS_ALERT_THRESHOLD_METERS = 500
+
+function base64ToUint8Array(base64: string): Uint8Array {
+  const binary = atob(base64)
+  const bytes = new Uint8Array(binary.length)
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
+  return bytes
+}
 
 export default function ClockInScreen() {
   const { client_id, client_name } = useLocalSearchParams<{ client_id: string; client_name: string }>()
@@ -64,12 +72,16 @@ export default function ClockInScreen() {
         gpsAlert = gpsDistance > GPS_ALERT_THRESHOLD_METERS
       }
 
+      // Read photo as base64 via expo-file-system (avoids fetch on local file:// URI)
+      const base64 = await FileSystem.readAsStringAsync(photo.uri, {
+        encoding: FileSystem.EncodingType.Base64,
+      })
+      const bytes = base64ToUint8Array(base64)
+
       const filename = `${user.id}_${Date.now()}_${client_id}.jpg`
-      const response = await fetch(photo.uri)
-      const blob = await response.blob()
-      const { data: uploadData, error: uploadError } = await supabase.storage
+      const { error: uploadError } = await supabase.storage
         .from('clock-in-photos')
-        .upload(filename, blob, { contentType: 'image/jpeg' })
+        .upload(filename, bytes, { contentType: 'image/jpeg' })
       if (uploadError) throw uploadError
 
       const { data: { publicUrl } } = supabase.storage
