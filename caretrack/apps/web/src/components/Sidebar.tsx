@@ -64,7 +64,7 @@ export default function Sidebar({ userEmail }: SidebarProps) {
         <div className="flex items-center gap-3 px-4 py-2 mb-2">
           <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center">
             <span className="text-white text-xs font-bold">
-              {userEmail[0].toUpperCase()}
+              {userEmail?.[0]?.toUpperCase() ?? '?'}
             </span>
           </div>
           <p className="text-blue-200 text-xs truncate flex-1">{userEmail}</p>
