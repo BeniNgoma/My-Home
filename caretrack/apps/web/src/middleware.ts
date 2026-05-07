@@ -4,7 +4,6 @@ import { NextResponse, type NextRequest } from 'next/server'
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
 
-  // Refresh session cookies if needed — required by @supabase/ssr
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -22,7 +21,21 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  await supabase.auth.getUser()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  const { pathname } = request.nextUrl
+  const isLoginPage = pathname === '/login'
+  const isApiRoute = pathname.startsWith('/api/')
+
+  // Redirect unauthenticated users to login (except login page and API routes)
+  if (!user && !isLoginPage && !isApiRoute) {
+    return NextResponse.redirect(new URL('/login', request.url))
+  }
+
+  // Redirect authenticated users away from login page
+  if (user && isLoginPage) {
+    return NextResponse.redirect(new URL('/', request.url))
+  }
 
   return supabaseResponse
 }
