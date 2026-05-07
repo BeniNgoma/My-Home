@@ -239,7 +239,7 @@ export default function ClientDetailPage() {
           {assignedAgents.map(a => (
             <span key={a.id} className="flex items-center gap-2 bg-blue-50 text-blue-700 text-sm font-medium px-3 py-1.5 rounded-full">
               <span className="w-5 h-5 rounded-full bg-blue-600 text-white text-xs flex items-center justify-center">
-                {a.full_name[0]}
+                {a.full_name?.[0] ?? '?'}
               </span>
               {a.full_name}
             </span>

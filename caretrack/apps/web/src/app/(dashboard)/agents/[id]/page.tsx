@@ -108,7 +108,7 @@ export default function AgentDetailPage() {
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-4">
           <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center">
-            <span className="text-blue-600 font-bold text-2xl">{agent.full_name[0]}</span>
+            <span className="text-blue-600 font-bold text-2xl">{agent.full_name?.[0] ?? '?'}</span>
           </div>
           <div>
             <div className="flex items-center gap-2">
