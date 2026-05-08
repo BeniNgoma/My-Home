@@ -1,39 +1,22 @@
 'use client'
 import { useState } from 'react'
-import { createClient } from '@/lib/supabase'
+import { loginAction } from './actions'
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setError('')
     setLoading(true)
-
-    const supabase = createClient()
-
-    const { data, error: authError } = await supabase.auth.signInWithPassword({ email, password })
-
-    if (authError) {
-      setError('Email ou mot de passe incorrect.')
+    const formData = new FormData(e.currentTarget)
+    const result = await loginAction(formData)
+    if (result?.error) {
+      setError(result.error)
       setLoading(false)
-      return
     }
-
-    // Role is available directly in the JWT response — no extra round-trip.
-    // The dashboard layout enforces the same check server-side for security.
-    const role = data.user.user_metadata?.role
-    if (role !== 'admin') {
-      await supabase.auth.signOut()
-      setError('Accès réservé aux administrateurs.')
-      setLoading(false)
-      return
-    }
-
-    window.location.href = '/'
+    // Si pas d'erreur, loginAction fait redirect('/') côté serveur
   }
 
   return (
@@ -56,11 +39,11 @@ export default function LoginPage() {
             <label className="label">Email</label>
             <input
               type="email"
+              name="email"
               className="input"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
               placeholder="admin@caretrack.com"
               required
+              autoComplete="email"
             />
           </div>
 
@@ -68,11 +51,11 @@ export default function LoginPage() {
             <label className="label">Mot de passe</label>
             <input
               type="password"
+              name="password"
               className="input"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
               required
+              autoComplete="current-password"
             />
           </div>
 
