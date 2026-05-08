@@ -21,19 +21,18 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  const { data: { user } } = await supabase.auth.getUser()
+  // getSession reads the JWT locally (no network call) — reliable for redirect logic
+  const { data: { session } } = await supabase.auth.getSession()
 
   const { pathname } = request.nextUrl
   const isLoginPage = pathname === '/login'
   const isApiRoute = pathname.startsWith('/api/')
 
-  // Redirect unauthenticated users to login (except login page and API routes)
-  if (!user && !isLoginPage && !isApiRoute) {
+  if (!session && !isLoginPage && !isApiRoute) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
-  // Redirect authenticated users away from login page
-  if (user && isLoginPage) {
+  if (session && isLoginPage) {
     return NextResponse.redirect(new URL('/', request.url))
   }
 
