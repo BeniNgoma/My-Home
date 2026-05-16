@@ -1,25 +1,22 @@
 'use client'
-import { useState } from 'react'
+import { useFormState, useFormStatus } from 'react-dom'
 import { loginAction } from './actions'
 
-export default function LoginPage() {
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
+function SubmitButton() {
+  const { pending } = useFormStatus()
+  return (
+    <button
+      type="submit"
+      disabled={pending}
+      className="w-full btn-primary py-3 mt-2 disabled:opacity-60"
+    >
+      {pending ? 'Connexion...' : 'Se connecter'}
+    </button>
+  )
+}
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault()
-    setError('')
-    setLoading(true)
-    const formData = new FormData(e.currentTarget)
-    const result = await loginAction(formData)
-    if (result?.error) {
-      setError(result.error)
-      setLoading(false)
-      return
-    }
-    // Hard redirect — ensures Set-Cookie headers from server action are applied before navigation
-    window.location.href = '/'
-  }
+export default function LoginPage() {
+  const [state, formAction] = useFormState(loginAction, { error: undefined })
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
@@ -30,10 +27,10 @@ export default function LoginPage() {
           <p className="text-gray-500 text-sm mt-1">Portail Administrateur</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {error && (
+        <form action={formAction} className="space-y-4">
+          {state?.error && (
             <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm">
-              {error}
+              {state.error}
             </div>
           )}
 
@@ -61,13 +58,7 @@ export default function LoginPage() {
             />
           </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full btn-primary py-3 mt-2 disabled:opacity-60"
-          >
-            {loading ? 'Connexion...' : 'Se connecter'}
-          </button>
+          <SubmitButton />
         </form>
       </div>
     </div>

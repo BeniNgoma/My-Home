@@ -1,7 +1,11 @@
 'use server'
 import { createClient } from '@/lib/supabase-server'
+import { redirect } from 'next/navigation'
 
-export async function loginAction(formData: FormData): Promise<{ error?: string; success?: boolean }> {
+export async function loginAction(
+  _prevState: { error?: string },
+  formData: FormData
+): Promise<{ error?: string }> {
   const email = (formData.get('email') as string)?.trim()
   const password = formData.get('password') as string
 
@@ -17,6 +21,5 @@ export async function loginAction(formData: FormData): Promise<{ error?: string;
     return { error: 'Accès réservé aux administrateurs.' }
   }
 
-  // Return success — client will do a hard redirect so cookies are committed first
-  return { success: true }
+  redirect('/')
 }
