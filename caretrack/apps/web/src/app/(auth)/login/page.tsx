@@ -15,8 +15,10 @@ export default function LoginPage() {
     if (result?.error) {
       setError(result.error)
       setLoading(false)
+      return
     }
-    // Si pas d'erreur, loginAction fait redirect('/') côté serveur
+    // Hard redirect — ensures Set-Cookie headers from server action are applied before navigation
+    window.location.href = '/'
   }
 
   return (
