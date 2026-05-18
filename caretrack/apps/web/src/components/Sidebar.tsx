@@ -3,15 +3,16 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import {
-  LayoutDashboard, Users, UserCheck, Clock, CreditCard, LogOut
+  LayoutDashboard, Users, UserCheck, Clock, CreditCard, LogOut, CalendarDays
 } from 'lucide-react'
 
 const navItems = [
-  { href: '/',            label: 'Dashboard',  icon: LayoutDashboard },
-  { href: '/agents',      label: 'Agents',     icon: Users },
-  { href: '/clients',     label: 'Clients',    icon: UserCheck },
-  { href: '/pointages',   label: 'Pointages',  icon: Clock },
-  { href: '/paie',        label: 'Paie',       icon: CreditCard },
+  { href: '/',              label: 'Dashboard',    icon: LayoutDashboard },
+  { href: '/agents',        label: 'Agents',       icon: Users },
+  { href: '/clients',       label: 'Clients',      icon: UserCheck },
+  { href: '/affectations',  label: 'Affectations', icon: CalendarDays },
+  { href: '/pointages',     label: 'Pointages',    icon: Clock },
+  { href: '/paie',          label: 'Paie',         icon: CreditCard },
 ]
 
 interface SidebarProps {

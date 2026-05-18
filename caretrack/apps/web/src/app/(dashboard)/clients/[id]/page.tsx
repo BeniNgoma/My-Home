@@ -4,7 +4,23 @@ import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import { formatDuration } from '@caretrack/shared'
 import type { Client, Profile, TimeEntryWithRelations } from '@caretrack/shared'
-import { ArrowLeft, MapPin, Pencil, X, Save } from 'lucide-react'
+import { ArrowLeft, MapPin, Pencil, X, Save, CalendarDays, Clock } from 'lucide-react'
+
+const DAY_ORDER = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday']
+const DAY_LABELS: Record<string,string> = {
+  monday:'Lundi', tuesday:'Mardi', wednesday:'Mercredi', thursday:'Jeudi',
+  friday:'Vendredi', saturday:'Samedi', sunday:'Dimanche',
+}
+
+interface AssignmentWithSchedule {
+  id: string
+  agent_id: string
+  start_date: string
+  end_date: string | null
+  recurrence_type: string
+  agent: { full_name: string }
+  schedules: { day_of_week: string; start_time: string; end_time: string }[]
+}
 
 interface AgentHoursSummary {
   agent_id: string
@@ -22,6 +38,7 @@ export default function ClientDetailPage() {
   const [assignedAgents, setAssignedAgents] = useState<Profile[]>([])
   const [entries, setEntries] = useState<TimeEntryWithRelations[]>([])
   const [agentSummaries, setAgentSummaries] = useState<AgentHoursSummary[]>([])
+  const [assignments, setAssignments] = useState<AssignmentWithSchedule[]>([])
   const [loading, setLoading] = useState(true)
   const [showEditForm, setShowEditForm] = useState(false)
   const [editForm, setEditForm] = useState({
@@ -35,10 +52,14 @@ export default function ClientDetailPage() {
 
   async function loadAll() {
     setLoading(true)
-    const [{ data: clientData }, { data: assignData }, { data: entriesData }] = await Promise.all([
+    const [{ data: clientData }, { data: assignData }, { data: entriesData }, { data: assignWithSched }] = await Promise.all([
       supabase.from('clients').select('*').eq('id', id).single(),
       supabase.from('agent_client_assignments').select('agent_id, profiles(*)').eq('client_id', id).eq('is_active', true),
       supabase.from('time_entries').select('*, agent:profiles!agent_id(id, full_name, email)').eq('client_id', id).in('status', ['completed', 'corrected']).order('clock_in_at', { ascending: false }),
+      supabase.from('agent_client_assignments')
+        .select('id, agent_id, start_date, end_date, recurrence_type, agent:profiles!agent_id(full_name), schedules:assignment_schedules(day_of_week, start_time, end_time)')
+        .eq('client_id', id)
+        .eq('is_active', true),
     ])
 
     const c = clientData as Client
@@ -70,6 +91,7 @@ export default function ClientDetailPage() {
       byAgent[agent.id].visits += 1
     }
     setAgentSummaries(Object.values(byAgent).sort((a, b) => b.total_minutes - a.total_minutes))
+    setAssignments((assignWithSched || []) as unknown as AssignmentWithSchedule[])
 
     setLoading(false)
   }
@@ -247,6 +269,64 @@ export default function ClientDetailPage() {
           {assignedAgents.length === 0 && <p className="text-gray-400 text-sm">Aucun agent assigné</p>}
         </div>
       </div>
+
+      {/* Planning hebdomadaire */}
+      {assignments.length > 0 && (() => {
+        // Per-agent, per-day schedule
+        let weeklyTotal = 0
+        const rows = assignments.map(a => {
+          const agentWeekly = a.schedules.reduce((sum, s) => {
+            const [sh, sm] = s.start_time.split(':').map(Number)
+            const [eh, em] = s.end_time.split(':').map(Number)
+            return sum + (eh * 60 + em - sh * 60 - sm) / 60
+          }, 0)
+          weeklyTotal += agentWeekly
+          return { a, agentWeekly }
+        })
+        return (
+          <div className="card">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-semibold text-gray-900 flex items-center gap-2">
+                <CalendarDays size={18} className="text-blue-600" /> Planning des agents
+              </h2>
+              <span className="flex items-center gap-1 text-blue-600 font-semibold text-sm">
+                <Clock size={14} /> {weeklyTotal.toFixed(1)}h / semaine (total)
+              </span>
+            </div>
+            <div className="space-y-4">
+              {rows.map(({ a, agentWeekly }) => (
+                <div key={a.id} className="border border-gray-100 rounded-xl p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center">
+                        <span className="text-blue-600 font-semibold text-xs">{a.agent?.full_name?.[0] ?? '?'}</span>
+                      </div>
+                      <span className="font-semibold text-gray-800 text-sm">{a.agent?.full_name}</span>
+                    </div>
+                    <span className="text-xs text-blue-600 font-semibold">{agentWeekly.toFixed(1)}h/sem</span>
+                  </div>
+                  <div className="space-y-1">
+                    {DAY_ORDER.map(day => {
+                      const s = a.schedules.find(x => x.day_of_week === day)
+                      if (!s) return null
+                      const [sh, sm] = s.start_time.split(':').map(Number)
+                      const [eh, em] = s.end_time.split(':').map(Number)
+                      const h = (eh * 60 + em - sh * 60 - sm) / 60
+                      return (
+                        <div key={day} className="flex items-center gap-3 text-xs">
+                          <span className="w-20 text-gray-500">{DAY_LABELS[day]}</span>
+                          <span className="text-gray-700">{s.start_time.slice(0,5)} – {s.end_time.slice(0,5)}</span>
+                          <span className="text-blue-500 font-medium">{h.toFixed(1)}h</span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )
+      })()}
 
       {/* Hours by agent */}
       {agentSummaries.length > 0 && (

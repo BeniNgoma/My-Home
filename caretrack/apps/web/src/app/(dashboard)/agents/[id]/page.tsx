@@ -4,7 +4,24 @@ import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import { formatDuration } from '@caretrack/shared'
 import type { Profile, Client, TimeEntryWithRelations } from '@caretrack/shared'
-import { ArrowLeft, Save, Pencil, X } from 'lucide-react'
+import { ArrowLeft, Save, Pencil, X, CalendarDays, Clock, Users, TrendingUp } from 'lucide-react'
+
+const DAY_ORDER = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday']
+const DAY_LABELS: Record<string,string> = {
+  monday:'Lundi', tuesday:'Mardi', wednesday:'Mercredi', thursday:'Jeudi',
+  friday:'Vendredi', saturday:'Samedi', sunday:'Dimanche',
+}
+
+interface AssignmentWithSchedule {
+  id: string
+  client_id: string
+  start_date: string
+  end_date: string | null
+  recurrence_type: string
+  is_active: boolean
+  client: { full_name: string }
+  schedules: { day_of_week: string; start_time: string; end_time: string }[]
+}
 
 export default function AgentDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -15,6 +32,7 @@ export default function AgentDetailPage() {
   const [assignedClients, setAssignedClients] = useState<Client[]>([])
   const [allClients, setAllClients] = useState<Client[]>([])
   const [entries, setEntries] = useState<TimeEntryWithRelations[]>([])
+  const [assignments, setAssignments] = useState<AssignmentWithSchedule[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [hourlyRate, setHourlyRate] = useState('')
@@ -27,11 +45,15 @@ export default function AgentDetailPage() {
 
   async function loadAll() {
     setLoading(true)
-    const [{ data: agentData }, { data: assignData }, { data: clientsData }, { data: entriesData }] = await Promise.all([
+    const [{ data: agentData }, { data: assignData }, { data: clientsData }, { data: entriesData }, { data: assignWithSched }] = await Promise.all([
       supabase.from('profiles').select('*').eq('id', id).single(),
       supabase.from('agent_client_assignments').select('client_id, clients(*)').eq('agent_id', id).eq('is_active', true),
       supabase.from('clients').select('*').eq('is_active', true).order('full_name'),
       supabase.from('time_entries').select('*, client:clients(id,full_name)').eq('agent_id', id).order('clock_in_at', { ascending: false }).limit(50),
+      supabase.from('agent_client_assignments')
+        .select('id, client_id, start_date, end_date, recurrence_type, is_active, client:clients!client_id(full_name), schedules:assignment_schedules(day_of_week, start_time, end_time)')
+        .eq('agent_id', id)
+        .eq('is_active', true),
     ])
     setAgent(agentData as Profile)
     setHourlyRate(String((agentData as any)?.hourly_rate || 0))
@@ -42,6 +64,7 @@ export default function AgentDetailPage() {
     setAssignedClients(((assignData || []) as any[]).map((a) => a.clients))
     setAllClients((clientsData || []) as Client[])
     setEntries((entriesData || []) as TimeEntryWithRelations[])
+    setAssignments((assignWithSched || []) as unknown as AssignmentWithSchedule[])
     setLoading(false)
   }
 
@@ -98,6 +121,15 @@ export default function AgentDetailPage() {
 
   const assignedIds = new Set(assignedClients.map(c => c.id))
   const unassignedClients = allClients.filter(c => !assignedIds.has(c.id))
+
+  const weeklyHours = assignments.reduce((total, a) =>
+    total + a.schedules.reduce((s, sch) => {
+      const [sh, sm] = sch.start_time.split(':').map(Number)
+      const [eh, em] = sch.end_time.split(':').map(Number)
+      return s + (eh * 60 + em - sh * 60 - sm) / 60
+    }, 0), 0)
+  const biWeeklyHours = weeklyHours * 2
+  const monthlyHours = weeklyHours * 52 / 12
 
   return (
     <div className="p-8 space-y-6">
@@ -205,6 +237,38 @@ export default function AgentDetailPage() {
         </div>
       </div>
 
+      {/* Hours stats */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="card flex items-center gap-3">
+          <div className="p-2.5 bg-blue-100 rounded-lg"><Users className="text-blue-600" size={20} /></div>
+          <div>
+            <p className="text-xs text-gray-500">Clients assignés</p>
+            <p className="text-xl font-bold text-gray-900">{assignments.length}</p>
+          </div>
+        </div>
+        <div className="card flex items-center gap-3">
+          <div className="p-2.5 bg-green-100 rounded-lg"><Clock className="text-green-600" size={20} /></div>
+          <div>
+            <p className="text-xs text-gray-500">Heures / semaine</p>
+            <p className="text-xl font-bold text-gray-900">{weeklyHours.toFixed(1)}h</p>
+          </div>
+        </div>
+        <div className="card flex items-center gap-3">
+          <div className="p-2.5 bg-purple-100 rounded-lg"><CalendarDays className="text-purple-600" size={20} /></div>
+          <div>
+            <p className="text-xs text-gray-500">Heures / 2 semaines</p>
+            <p className="text-xl font-bold text-gray-900">{biWeeklyHours.toFixed(1)}h</p>
+          </div>
+        </div>
+        <div className="card flex items-center gap-3">
+          <div className="p-2.5 bg-orange-100 rounded-lg"><TrendingUp className="text-orange-600" size={20} /></div>
+          <div>
+            <p className="text-xs text-gray-500">Heures / mois</p>
+            <p className="text-xl font-bold text-gray-900">{monthlyHours.toFixed(1)}h</p>
+          </div>
+        </div>
+      </div>
+
       {/* Assigned Clients */}
       <div className="card">
         <div className="flex justify-between items-center mb-4">
@@ -242,6 +306,65 @@ export default function AgentDetailPage() {
           )}
         </div>
       </div>
+
+      {/* Planning section */}
+      {assignments.length > 0 && (() => {
+        // Build per-day breakdown across all active assignments
+        const byDay: Record<string, { clientName: string; start: string; end: string; hours: number }[]> = {}
+        let weeklyTotal = 0
+        for (const a of assignments) {
+          for (const s of a.schedules) {
+            const [sh, sm] = s.start_time.split(':').map(Number)
+            const [eh, em] = s.end_time.split(':').map(Number)
+            const h = (eh * 60 + em - sh * 60 - sm) / 60
+            weeklyTotal += h
+            if (!byDay[s.day_of_week]) byDay[s.day_of_week] = []
+            byDay[s.day_of_week].push({ clientName: a.client.full_name, start: s.start_time.slice(0,5), end: s.end_time.slice(0,5), hours: h })
+          }
+        }
+        const now = new Date()
+        const startOfWeek = new Date(now); startOfWeek.setDate(now.getDate() - ((now.getDay() + 6) % 7)); startOfWeek.setHours(0,0,0,0)
+        const endOfWeek = new Date(startOfWeek); endOfWeek.setDate(startOfWeek.getDate() + 6)
+        return (
+          <div className="card">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-semibold text-gray-900 flex items-center gap-2">
+                <CalendarDays size={18} className="text-blue-600" /> Planning hebdomadaire
+              </h2>
+              <div className="flex items-center gap-1 text-blue-600 font-semibold">
+                <Clock size={16} />
+                <span>{weeklyTotal.toFixed(1)}h / semaine</span>
+              </div>
+            </div>
+            <div className="space-y-2">
+              {DAY_ORDER.map(day => {
+                const slots = byDay[day]
+                if (!slots) return (
+                  <div key={day} className="flex items-center gap-3 py-2 border-b border-gray-50 last:border-0">
+                    <span className="w-24 text-sm text-gray-300 font-medium">{DAY_LABELS[day]}</span>
+                    <span className="text-xs text-gray-200">—</span>
+                  </div>
+                )
+                const dayTotal = slots.reduce((s, x) => s + x.hours, 0)
+                return (
+                  <div key={day} className="flex items-start gap-3 py-2 border-b border-gray-50 last:border-0">
+                    <span className="w-24 text-sm font-semibold text-gray-700 pt-0.5">{DAY_LABELS[day]}</span>
+                    <div className="flex flex-wrap gap-2 flex-1">
+                      {slots.map((sl, i) => (
+                        <span key={i} className="inline-flex items-center gap-1.5 bg-blue-50 text-blue-700 rounded-lg px-3 py-1 text-xs font-medium">
+                          {sl.clientName} · {sl.start}–{sl.end}
+                          <span className="text-blue-400 font-normal">{sl.hours.toFixed(1)}h</span>
+                        </span>
+                      ))}
+                    </div>
+                    <span className="text-sm font-semibold text-gray-500 shrink-0">{dayTotal.toFixed(1)}h</span>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )
+      })()}
 
       {/* Time entries */}
       <div className="card p-0 overflow-hidden">

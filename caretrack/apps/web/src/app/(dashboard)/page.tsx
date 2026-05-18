@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase'
 import { formatDuration } from '@caretrack/shared'
 import type { TimeEntryWithRelations } from '@caretrack/shared'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
-import { Users, Clock, AlertTriangle, TrendingUp } from 'lucide-react'
+import { Users, Clock, AlertTriangle, TrendingUp, UserCheck, CalendarDays } from 'lucide-react'
 
 interface ActiveSession extends TimeEntryWithRelations {
   duration_live?: number
@@ -12,12 +12,19 @@ interface ActiveSession extends TimeEntryWithRelations {
 
 interface DayStats { date: string; hours: number }
 
+interface GlobalStats {
+  totalAgents: number
+  totalClients: number
+  activeAssignments: number
+}
+
 export default function DashboardPage() {
   const supabase = createClient()
   const [activeSessions, setActiveSessions] = useState<ActiveSession[]>([])
   const [weekHours, setWeekHours] = useState(0)
   const [monthHours, setMonthHours] = useState(0)
   const [dayStats, setDayStats] = useState<DayStats[]>([])
+  const [globalStats, setGlobalStats] = useState<GlobalStats>({ totalAgents: 0, totalClients: 0, activeAssignments: 0 })
   const [now, setNow] = useState(Date.now())
 
   useEffect(() => { const t = setInterval(() => setNow(Date.now()), 30000); return () => clearInterval(t) }, [])
@@ -43,6 +50,17 @@ export default function DashboardPage() {
       .order('clock_in_at', { ascending: true })
 
     setActiveSessions((sessions || []) as ActiveSession[])
+
+    const [{ count: agentCount }, { count: clientCount }, { count: assignCount }] = await Promise.all([
+      supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'agent').eq('is_active', true),
+      supabase.from('clients').select('*', { count: 'exact', head: true }).eq('is_active', true),
+      supabase.from('agent_client_assignments').select('*', { count: 'exact', head: true }).eq('is_active', true),
+    ])
+    setGlobalStats({
+      totalAgents: agentCount ?? 0,
+      totalClients: clientCount ?? 0,
+      activeAssignments: assignCount ?? 0,
+    })
 
     const now = new Date()
     const startOfWeek = new Date(now); startOfWeek.setDate(now.getDate() - now.getDay()); startOfWeek.setHours(0, 0, 0, 0)
@@ -104,12 +122,37 @@ export default function DashboardPage() {
         <p className="text-gray-500 text-sm mt-1">Vue en temps réel de l'activité</p>
       </div>
 
-      {/* Stats cards */}
+      {/* Stats cards — row 1: global */}
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+        <div className="card flex items-center gap-4">
+          <div className="p-3 bg-blue-100 rounded-lg"><Users className="text-blue-600" size={22} /></div>
+          <div>
+            <p className="text-sm text-gray-500">Total agents</p>
+            <p className="text-2xl font-bold text-gray-900">{globalStats.totalAgents}</p>
+          </div>
+        </div>
+        <div className="card flex items-center gap-4">
+          <div className="p-3 bg-green-100 rounded-lg"><UserCheck className="text-green-600" size={22} /></div>
+          <div>
+            <p className="text-sm text-gray-500">Total clients</p>
+            <p className="text-2xl font-bold text-gray-900">{globalStats.totalClients}</p>
+          </div>
+        </div>
+        <div className="card flex items-center gap-4">
+          <div className="p-3 bg-purple-100 rounded-lg"><CalendarDays className="text-purple-600" size={22} /></div>
+          <div>
+            <p className="text-sm text-gray-500">Affectations actives</p>
+            <p className="text-2xl font-bold text-gray-900">{globalStats.activeAssignments}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Stats cards — row 2: live activity */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="card flex items-center gap-4">
           <div className="p-3 bg-green-100 rounded-lg"><Users className="text-green-600" size={24} /></div>
           <div>
-            <p className="text-sm text-gray-500">Agents actifs</p>
+            <p className="text-sm text-gray-500">En service maintenant</p>
             <p className="text-2xl font-bold text-gray-900">{activeSessions.length}</p>
           </div>
         </div>
