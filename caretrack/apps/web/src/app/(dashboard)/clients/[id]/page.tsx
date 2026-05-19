@@ -2,14 +2,14 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
-import { formatDuration } from '@caretrack/shared'
-import type { Client, Profile, TimeEntryWithRelations } from '@caretrack/shared'
+import { formatDuration } from '@/lib/types'
+import type { Client, Profile, TimeEntryWithRelations } from '@/lib/types'
 import { ArrowLeft, MapPin, Pencil, X, Save, CalendarDays, Clock } from 'lucide-react'
 
 const DAY_ORDER = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday']
 const DAY_LABELS: Record<string,string> = {
-  monday:'Lundi', tuesday:'Mardi', wednesday:'Mercredi', thursday:'Jeudi',
-  friday:'Vendredi', saturday:'Samedi', sunday:'Dimanche',
+  monday:'Monday', tuesday:'Tuesday', wednesday:'Wednesday', thursday:'Thursday',
+  friday:'Friday', saturday:'Saturday', sunday:'Sunday',
 }
 
 interface AssignmentWithSchedule {
@@ -92,7 +92,6 @@ export default function ClientDetailPage() {
     }
     setAgentSummaries(Object.values(byAgent).sort((a, b) => b.total_minutes - a.total_minutes))
     setAssignments((assignWithSched || []) as unknown as AssignmentWithSchedule[])
-
     setLoading(false)
   }
 
@@ -122,15 +121,15 @@ export default function ClientDetailPage() {
     await loadAll()
   }
 
-  if (loading) return <div className="p-8 text-gray-400">Chargement...</div>
-  if (!client) return <div className="p-8 text-gray-400">Client introuvable</div>
+  if (loading) return <div className="p-8 text-gray-400">Loading...</div>
+  if (!client) return <div className="p-8 text-gray-400">Client not found</div>
 
   const totalMinutes = entries.reduce((s, e) => s + (e.duration_minutes || 0), 0)
 
   return (
     <div className="p-8 space-y-6">
       <button onClick={() => router.back()} className="flex items-center gap-2 text-gray-500 hover:text-gray-900 text-sm">
-        <ArrowLeft size={16} /> Retour aux clients
+        <ArrowLeft size={16} /> Back to clients
       </button>
 
       <div className="flex items-start justify-between">
@@ -140,27 +139,27 @@ export default function ClientDetailPage() {
             <button
               onClick={() => setShowEditForm(true)}
               className="text-gray-400 hover:text-blue-600 transition-colors"
-              title="Modifier"
+              title="Edit"
             >
               <Pencil size={16} />
             </button>
           </div>
           <p className="text-gray-500 flex items-center gap-1 mt-1">
-            <MapPin size={14} /> {client.address || 'Adresse non renseignée'}
+            <MapPin size={14} /> {client.address || 'No address on file'}
           </p>
         </div>
         <div className="flex items-center gap-3">
           <span className={`text-sm font-semibold px-3 py-1 rounded-full ${
             client.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
           }`}>
-            {client.is_active ? 'Actif' : 'Inactif'}
+            {client.is_active ? 'Active' : 'Inactive'}
           </span>
           <button
             onClick={toggleActive}
             disabled={togglingActive}
             className={client.is_active ? 'btn-danger' : 'btn-primary'}
           >
-            {client.is_active ? 'Désactiver' : 'Réactiver'}
+            {client.is_active ? 'Deactivate' : 'Reactivate'}
           </button>
         </div>
       </div>
@@ -170,30 +169,30 @@ export default function ClientDetailPage() {
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl p-8 w-full max-w-md max-h-screen overflow-y-auto">
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-bold text-gray-900">Modifier le client</h2>
+              <h2 className="text-xl font-bold text-gray-900">Edit Client</h2>
               <button onClick={() => setShowEditForm(false)}><X size={20} className="text-gray-400" /></button>
             </div>
             <form onSubmit={handleEditClient} className="space-y-4">
               <div>
-                <label className="label">Nom complet *</label>
+                <label className="label">Full Name *</label>
                 <input className="input" value={editForm.full_name} onChange={e => setEditForm({ ...editForm, full_name: e.target.value })} required />
               </div>
               <div>
-                <label className="label">Adresse</label>
+                <label className="label">Address</label>
                 <input className="input" value={editForm.address} onChange={e => setEditForm({ ...editForm, address: e.target.value })} />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="label">Latitude GPS</label>
+                  <label className="label">GPS Latitude</label>
                   <input type="number" step="any" className="input" value={editForm.latitude} onChange={e => setEditForm({ ...editForm, latitude: e.target.value })} placeholder="48.8566" />
                 </div>
                 <div>
-                  <label className="label">Longitude GPS</label>
+                  <label className="label">GPS Longitude</label>
                   <input type="number" step="any" className="input" value={editForm.longitude} onChange={e => setEditForm({ ...editForm, longitude: e.target.value })} placeholder="2.3522" />
                 </div>
               </div>
               <div>
-                <label className="label">Téléphone</label>
+                <label className="label">Phone</label>
                 <input className="input" value={editForm.phone} onChange={e => setEditForm({ ...editForm, phone: e.target.value })} />
               </div>
               <div>
@@ -205,9 +204,9 @@ export default function ClientDetailPage() {
                 <textarea className="input resize-none" rows={3} value={editForm.notes} onChange={e => setEditForm({ ...editForm, notes: e.target.value })} />
               </div>
               <div className="flex gap-3 pt-2">
-                <button type="button" className="btn-secondary flex-1" onClick={() => setShowEditForm(false)}>Annuler</button>
+                <button type="button" className="btn-secondary flex-1" onClick={() => setShowEditForm(false)}>Cancel</button>
                 <button type="submit" className="btn-primary flex-1 flex items-center justify-center gap-1" disabled={editSaving}>
-                  <Save size={15} /> {editSaving ? 'Enregistrement...' : 'Enregistrer'}
+                  <Save size={15} /> {editSaving ? 'Saving...' : 'Save'}
                 </button>
               </div>
             </form>
@@ -218,7 +217,7 @@ export default function ClientDetailPage() {
       {/* Info cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="card">
-          <p className="text-xs text-gray-400 mb-1">Téléphone</p>
+          <p className="text-xs text-gray-400 mb-1">Phone</p>
           <p className="font-semibold">{client.phone || '—'}</p>
         </div>
         <div className="card">
@@ -226,7 +225,7 @@ export default function ClientDetailPage() {
           <p className="font-semibold">{client.email || '—'}</p>
         </div>
         <div className="card">
-          <p className="text-xs text-gray-400 mb-1">Total heures (toutes visites)</p>
+          <p className="text-xs text-gray-400 mb-1">Total Hours (all visits)</p>
           <p className="font-semibold text-blue-600 text-xl">{formatDuration(totalMinutes)}</p>
         </div>
       </div>
@@ -241,22 +240,22 @@ export default function ClientDetailPage() {
       {client.latitude && client.longitude && (
         <div className="card">
           <div className="flex justify-between items-center">
-            <p className="font-semibold text-gray-900 text-sm">Position GPS</p>
+            <p className="font-semibold text-gray-900 text-sm">GPS Location</p>
             <a
               href={`https://maps.google.com/?q=${client.latitude},${client.longitude}`}
               target="_blank"
               className="text-blue-600 text-sm hover:text-blue-800 flex items-center gap-1"
             >
-              <MapPin size={14} /> Ouvrir dans Google Maps
+              <MapPin size={14} /> Open in Google Maps
             </a>
           </div>
           <p className="text-gray-400 text-xs mt-1">{client.latitude}, {client.longitude}</p>
         </div>
       )}
 
-      {/* Agents assigned */}
+      {/* Assigned agents */}
       <div className="card">
-        <h2 className="font-semibold text-gray-900 mb-4">Agents assignés ({assignedAgents.length})</h2>
+        <h2 className="font-semibold text-gray-900 mb-4">Assigned Agents ({assignedAgents.length})</h2>
         <div className="flex flex-wrap gap-2">
           {assignedAgents.map(a => (
             <span key={a.id} className="flex items-center gap-2 bg-blue-50 text-blue-700 text-sm font-medium px-3 py-1.5 rounded-full">
@@ -266,13 +265,12 @@ export default function ClientDetailPage() {
               {a.full_name}
             </span>
           ))}
-          {assignedAgents.length === 0 && <p className="text-gray-400 text-sm">Aucun agent assigné</p>}
+          {assignedAgents.length === 0 && <p className="text-gray-400 text-sm">No agents assigned</p>}
         </div>
       </div>
 
-      {/* Planning hebdomadaire */}
+      {/* Agent schedules */}
       {assignments.length > 0 && (() => {
-        // Per-agent, per-day schedule
         let weeklyTotal = 0
         const rows = assignments.map(a => {
           const agentWeekly = a.schedules.reduce((sum, s) => {
@@ -287,10 +285,10 @@ export default function ClientDetailPage() {
           <div className="card">
             <div className="flex items-center justify-between mb-4">
               <h2 className="font-semibold text-gray-900 flex items-center gap-2">
-                <CalendarDays size={18} className="text-blue-600" /> Planning des agents
+                <CalendarDays size={18} className="text-blue-600" /> Agent Schedules
               </h2>
               <span className="flex items-center gap-1 text-blue-600 font-semibold text-sm">
-                <Clock size={14} /> {weeklyTotal.toFixed(1)}h / semaine (total)
+                <Clock size={14} /> {weeklyTotal.toFixed(1)}h / week (total)
               </span>
             </div>
             <div className="space-y-4">
@@ -303,7 +301,7 @@ export default function ClientDetailPage() {
                       </div>
                       <span className="font-semibold text-gray-800 text-sm">{a.agent?.full_name}</span>
                     </div>
-                    <span className="text-xs text-blue-600 font-semibold">{agentWeekly.toFixed(1)}h/sem</span>
+                    <span className="text-xs text-blue-600 font-semibold">{agentWeekly.toFixed(1)}h/week</span>
                   </div>
                   <div className="space-y-1">
                     {DAY_ORDER.map(day => {
@@ -331,14 +329,14 @@ export default function ClientDetailPage() {
       {/* Hours by agent */}
       {agentSummaries.length > 0 && (
         <div className="card">
-          <h2 className="font-semibold text-gray-900 mb-4">Heures par agent (facturation)</h2>
+          <h2 className="font-semibold text-gray-900 mb-4">Hours by Agent (billing)</h2>
           <div className="space-y-3">
             {agentSummaries.map(s => (
               <div key={s.agent_id} className="flex items-center gap-4">
                 <div className="flex-1">
                   <div className="flex justify-between mb-1">
                     <span className="text-sm font-medium text-gray-900">{s.agent_name}</span>
-                    <span className="text-sm text-gray-500">{s.visits} visites · {formatDuration(s.total_minutes)}</span>
+                    <span className="text-sm text-gray-500">{s.visits} visit{s.visits !== 1 ? 's' : ''} · {formatDuration(s.total_minutes)}</span>
                   </div>
                   <div className="h-2 bg-gray-100 rounded-full">
                     <div
@@ -356,16 +354,16 @@ export default function ClientDetailPage() {
       {/* Visit history */}
       <div className="card p-0 overflow-hidden">
         <div className="p-6 border-b border-gray-100">
-          <h2 className="font-semibold text-gray-900">Historique des visites</h2>
+          <h2 className="font-semibold text-gray-900">Visit History</h2>
         </div>
         <table className="w-full">
           <thead className="border-b border-gray-100">
             <tr>
               <th className="table-header">Agent</th>
-              <th className="table-header">Arrivée</th>
-              <th className="table-header">Départ</th>
-              <th className="table-header">Durée</th>
-              <th className="table-header">Statut</th>
+              <th className="table-header">Clock In</th>
+              <th className="table-header">Clock Out</th>
+              <th className="table-header">Duration</th>
+              <th className="table-header">Status</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
@@ -373,10 +371,10 @@ export default function ClientDetailPage() {
               <tr key={e.id} className="hover:bg-gray-50">
                 <td className="table-cell font-medium">{(e as any).agent?.full_name}</td>
                 <td className="table-cell text-gray-500 text-xs">
-                  {new Date(e.clock_in_at).toLocaleString('fr-FR', { day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit' })}
+                  {new Date(e.clock_in_at).toLocaleString('en-US', { month:'2-digit', day:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' })}
                 </td>
                 <td className="table-cell text-gray-500 text-xs">
-                  {e.clock_out_at ? new Date(e.clock_out_at).toLocaleString('fr-FR', { day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit' }) : '—'}
+                  {e.clock_out_at ? new Date(e.clock_out_at).toLocaleString('en-US', { month:'2-digit', day:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' }) : '—'}
                 </td>
                 <td className="table-cell font-semibold text-blue-600">{formatDuration(e.duration_minutes)}</td>
                 <td className="table-cell">
@@ -387,7 +385,7 @@ export default function ClientDetailPage() {
               </tr>
             ))}
             {entries.length === 0 && (
-              <tr><td colSpan={5} className="py-8 text-center text-gray-400">Aucune visite</td></tr>
+              <tr><td colSpan={5} className="py-8 text-center text-gray-400">No visits</td></tr>
             )}
           </tbody>
         </table>

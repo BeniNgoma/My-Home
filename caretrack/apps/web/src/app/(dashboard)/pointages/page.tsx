@@ -1,8 +1,8 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
-import { formatDuration } from '@caretrack/shared'
-import type { TimeEntryWithRelations, Profile, Client } from '@caretrack/shared'
+import { formatDuration } from '@/lib/types'
+import type { TimeEntryWithRelations, Profile, Client } from '@/lib/types'
 import { Download, MapPin, X, AlertTriangle } from 'lucide-react'
 import * as XLSX from 'xlsx'
 
@@ -54,7 +54,7 @@ export default function PointagesPage() {
     await supabase.from('time_entries').update({
       clock_out_at: new Date().toISOString(),
       status: 'corrected',
-      correction_note: 'Clock-out forcé par l\'administrateur',
+      correction_note: 'Clock-out forced by administrator',
       corrected_by: user?.id,
     }).eq('id', entry.id)
     await loadAll()
@@ -93,17 +93,17 @@ export default function PointagesPage() {
     const rows = filtered().map(e => ({
       Agent: e.agent?.full_name || '',
       Client: e.client?.full_name || '',
-      'Clock In': e.clock_in_at ? new Date(e.clock_in_at).toLocaleString('fr-FR') : '',
-      'Clock Out': e.clock_out_at ? new Date(e.clock_out_at).toLocaleString('fr-FR') : '',
-      'Durée (min)': e.duration_minutes || '',
-      Statut: e.status,
-      'Alerte GPS': e.gps_alert ? 'Oui' : 'Non',
-      'Note correction': e.correction_note || '',
+      'Clock In': e.clock_in_at ? new Date(e.clock_in_at).toLocaleString('en-US') : '',
+      'Clock Out': e.clock_out_at ? new Date(e.clock_out_at).toLocaleString('en-US') : '',
+      'Duration (min)': e.duration_minutes || '',
+      Status: e.status,
+      'GPS Alert': e.gps_alert ? 'Yes' : 'No',
+      'Correction Note': e.correction_note || '',
     }))
     const ws = XLSX.utils.json_to_sheet(rows)
     const wb = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(wb, ws, 'Pointages')
-    XLSX.writeFile(wb, `pointages_${new Date().toISOString().slice(0, 10)}.xlsx`)
+    XLSX.utils.book_append_sheet(wb, ws, 'Time Entries')
+    XLSX.writeFile(wb, `time_entries_${new Date().toISOString().slice(0, 10)}.xlsx`)
   }
 
   const data = filtered()
@@ -112,29 +112,29 @@ export default function PointagesPage() {
     <div className="p-8 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Pointages</h1>
-          <p className="text-gray-500 text-sm mt-1">{data.length} entrées affichées</p>
+          <h1 className="text-2xl font-bold text-gray-900">Time Entries</h1>
+          <p className="text-gray-500 text-sm mt-1">{data.length} entries displayed</p>
         </div>
         <button onClick={exportExcel} className="btn-secondary flex items-center gap-2">
-          <Download size={18} /> Exporter Excel
+          <Download size={18} /> Export Excel
         </button>
       </div>
 
       {/* Filters */}
       <div className="card grid grid-cols-2 md:grid-cols-5 gap-3">
         <select className="input" value={filterAgent} onChange={e => setFilterAgent(e.target.value)}>
-          <option value="">Tous les agents</option>
+          <option value="">All agents</option>
           {agents.map(a => <option key={a.id} value={a.id}>{a.full_name}</option>)}
         </select>
         <select className="input" value={filterClient} onChange={e => setFilterClient(e.target.value)}>
-          <option value="">Tous les clients</option>
+          <option value="">All clients</option>
           {clients.map(c => <option key={c.id} value={c.id}>{c.full_name}</option>)}
         </select>
         <select className="input" value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
-          <option value="">Tous les statuts</option>
-          <option value="active">En cours</option>
-          <option value="completed">Terminé</option>
-          <option value="corrected">Corrigé</option>
+          <option value="">All statuses</option>
+          <option value="active">Active</option>
+          <option value="completed">Completed</option>
+          <option value="corrected">Corrected</option>
         </select>
         <input type="date" className="input" value={filterFrom} onChange={e => setFilterFrom(e.target.value)} />
         <input type="date" className="input" value={filterTo} onChange={e => setFilterTo(e.target.value)} />
@@ -143,7 +143,7 @@ export default function PointagesPage() {
       {/* Table */}
       <div className="card p-0 overflow-hidden">
         {loading ? (
-          <div className="py-12 text-center text-gray-400">Chargement...</div>
+          <div className="py-12 text-center text-gray-400">Loading...</div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
@@ -153,8 +153,8 @@ export default function PointagesPage() {
                   <th className="table-header">Client</th>
                   <th className="table-header">Clock In</th>
                   <th className="table-header">Clock Out</th>
-                  <th className="table-header">Durée</th>
-                  <th className="table-header">Statut</th>
+                  <th className="table-header">Duration</th>
+                  <th className="table-header">Status</th>
                   <th className="table-header">Actions</th>
                 </tr>
               </thead>
@@ -168,10 +168,10 @@ export default function PointagesPage() {
                     <td className="table-cell font-medium">{e.agent?.full_name}</td>
                     <td className="table-cell text-gray-600">{e.client?.full_name}</td>
                     <td className="table-cell text-gray-500 text-xs">
-                      {new Date(e.clock_in_at).toLocaleString('fr-FR', { day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit' })}
+                      {new Date(e.clock_in_at).toLocaleString('en-US', { month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' })}
                     </td>
                     <td className="table-cell text-gray-500 text-xs">
-                      {e.clock_out_at ? new Date(e.clock_out_at).toLocaleString('fr-FR', { day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit' }) : '—'}
+                      {e.clock_out_at ? new Date(e.clock_out_at).toLocaleString('en-US', { month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' }) : '—'}
                     </td>
                     <td className="table-cell font-semibold text-blue-600">{formatDuration(e.duration_minutes)}</td>
                     <td className="table-cell" onClick={ev => ev.stopPropagation()}>
@@ -191,7 +191,7 @@ export default function PointagesPage() {
                             onClick={() => handleForceClockOut(e)}
                             className="text-xs text-red-600 hover:text-red-800 font-medium"
                           >
-                            Forcer sortie
+                            Force Clock-Out
                           </button>
                         )}
                         <button
@@ -203,14 +203,14 @@ export default function PointagesPage() {
                           }}
                           className="text-xs text-blue-600 hover:text-blue-800 font-medium"
                         >
-                          Corriger
+                          Correct
                         </button>
                       </div>
                     </td>
                   </tr>
                 ))}
                 {data.length === 0 && (
-                  <tr><td colSpan={7} className="py-8 text-center text-gray-400">Aucun pointage</td></tr>
+                  <tr><td colSpan={7} className="py-8 text-center text-gray-400">No time entries</td></tr>
                 )}
               </tbody>
             </table>
@@ -223,7 +223,7 @@ export default function PointagesPage() {
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setSelected(null)}>
           <div className="bg-white rounded-2xl p-6 w-full max-w-lg" onClick={e => e.stopPropagation()}>
             <div className="flex justify-between items-start mb-6">
-              <h2 className="text-xl font-bold text-gray-900">Détail du pointage</h2>
+              <h2 className="text-xl font-bold text-gray-900">Time Entry Details</h2>
               <button onClick={() => setSelected(null)}><X size={20} className="text-gray-400" /></button>
             </div>
             <div className="space-y-3">
@@ -240,13 +240,13 @@ export default function PointagesPage() {
               <div className="grid grid-cols-2 gap-3">
                 {selected.clock_in_photo_url && (
                   <div>
-                    <p className="text-xs text-gray-400 mb-2">Photo arrivée</p>
+                    <p className="text-xs text-gray-400 mb-2">Clock-in photo</p>
                     <img src={selected.clock_in_photo_url} alt="Clock In" className="rounded-xl w-full object-cover h-32" />
                   </div>
                 )}
                 {selected.clock_out_photo_url && (
                   <div>
-                    <p className="text-xs text-gray-400 mb-2">Photo départ</p>
+                    <p className="text-xs text-gray-400 mb-2">Clock-out photo</p>
                     <img src={selected.clock_out_photo_url} alt="Clock Out" className="rounded-xl w-full object-cover h-32" />
                   </div>
                 )}
@@ -257,20 +257,20 @@ export default function PointagesPage() {
                   target="_blank"
                   className="flex items-center gap-2 text-blue-600 hover:text-blue-800 text-sm"
                 >
-                  <MapPin size={16} /> Voir position arrivée sur Google Maps
+                  <MapPin size={16} /> View clock-in location on Google Maps
                 </a>
               )}
               {selected.gps_alert && (
                 <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 flex items-center gap-2">
                   <AlertTriangle size={16} className="text-amber-600" />
                   <p className="text-sm text-amber-800">
-                    Alerte GPS — Distance : {selected.gps_distance_meters?.toFixed(0)}m du domicile client
+                    GPS Alert — Distance: {selected.gps_distance_meters?.toFixed(0)}m from client's home
                   </p>
                 </div>
               )}
               {selected.correction_note && (
                 <div className="bg-purple-50 rounded-xl px-4 py-3">
-                  <p className="text-xs text-purple-600 font-semibold mb-1">Note de correction</p>
+                  <p className="text-xs text-purple-600 font-semibold mb-1">Correction Note</p>
                   <p className="text-sm text-purple-900">{selected.correction_note}</p>
                 </div>
               )}
@@ -283,34 +283,34 @@ export default function PointagesPage() {
       {correcting && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl p-6 w-full max-w-md">
-            <h2 className="text-xl font-bold text-gray-900 mb-1">Corriger un pointage</h2>
+            <h2 className="text-xl font-bold text-gray-900 mb-1">Correct a Time Entry</h2>
             <p className="text-sm text-gray-500 mb-6">
               {correcting.agent?.full_name} → {correcting.client?.full_name}
             </p>
             <form onSubmit={handleCorrect} className="space-y-4">
               <div>
-                <label className="label">Heure d'arrivée</label>
+                <label className="label">Clock-in Time</label>
                 <input type="datetime-local" className="input" value={corrClockIn} onChange={e => setCorrClockIn(e.target.value)} required />
               </div>
               <div>
-                <label className="label">Heure de départ</label>
+                <label className="label">Clock-out Time</label>
                 <input type="datetime-local" className="input" value={corrClockOut} onChange={e => setCorrClockOut(e.target.value)} />
               </div>
               <div>
-                <label className="label">Note de correction <span className="text-red-500">*</span></label>
+                <label className="label">Correction Note <span className="text-red-500">*</span></label>
                 <textarea
                   className="input resize-none"
                   rows={3}
-                  placeholder="Expliquez la raison de cette correction..."
+                  placeholder="Explain the reason for this correction..."
                   value={corrNote}
                   onChange={e => setCorrNote(e.target.value)}
                   required
                 />
               </div>
               <div className="flex gap-3">
-                <button type="button" className="btn-secondary flex-1" onClick={() => setCorrecting(null)}>Annuler</button>
+                <button type="button" className="btn-secondary flex-1" onClick={() => setCorrecting(null)}>Cancel</button>
                 <button type="submit" className="btn-primary flex-1" disabled={corrSaving}>
-                  {corrSaving ? 'Enregistrement...' : 'Corriger'}
+                  {corrSaving ? 'Saving...' : 'Correct'}
                 </button>
               </div>
             </form>

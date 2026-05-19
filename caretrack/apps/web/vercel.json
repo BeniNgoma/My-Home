@@ -2,7 +2,7 @@
   "crons": [
     {
       "path": "/api/send-alerts?type=missed_clockout",
-      "schedule": "0 * * * *"
+      "schedule": "0 12 * * *"
     },
     {
       "path": "/api/send-alerts?type=daily_summary",

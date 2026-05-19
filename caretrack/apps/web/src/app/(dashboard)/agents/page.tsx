@@ -8,12 +8,12 @@ import {
 
 const DAY_ORDER = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday']
 const DAY_SHORT: Record<string,string> = {
-  monday:'Lun', tuesday:'Mar', wednesday:'Mer', thursday:'Jeu',
-  friday:'Ven', saturday:'Sam', sunday:'Dim',
+  monday:'Mon', tuesday:'Tue', wednesday:'Wed', thursday:'Thu',
+  friday:'Fri', saturday:'Sat', sunday:'Sun',
 }
 const DAY_FULL: Record<string,string> = {
-  monday:'Lundi', tuesday:'Mardi', wednesday:'Mercredi', thursday:'Jeudi',
-  friday:'Vendredi', saturday:'Samedi', sunday:'Dimanche',
+  monday:'Monday', tuesday:'Tuesday', wednesday:'Wednesday', thursday:'Thursday',
+  friday:'Friday', saturday:'Saturday', sunday:'Sunday',
 }
 
 interface Schedule { day_of_week: string; start_time: string; end_time: string }
@@ -67,7 +67,7 @@ export default function AgentsPage() {
       .from('profiles')
       .select(`
         id, full_name, email, phone, hourly_rate, is_active,
-        raw_assignments:agent_client_assignments(
+        raw_assignments:agent_client_assignments!agent_id(
           id, is_active,
           client:clients!client_id(id, full_name),
           schedules:assignment_schedules(day_of_week, start_time, end_time)
@@ -112,7 +112,6 @@ export default function AgentsPage() {
   useEffect(() => {
     loadAgents()
 
-    // Realtime: refresh whenever assignments or schedules change
     const channel = supabase
       .channel('agents-stats-realtime')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'agent_client_assignments' }, loadAgents)
@@ -133,7 +132,7 @@ export default function AgentsPage() {
         body: JSON.stringify(form),
       })
       const json = await res.json()
-      if (!res.ok) throw new Error(json.error || 'Erreur')
+      if (!res.ok) throw new Error(json.error || 'Error')
       setShowForm(false)
       setForm({ full_name: '', email: '', phone: '', hourly_rate: '15', password: '' })
       await loadAgents()
@@ -158,7 +157,6 @@ export default function AgentsPage() {
     a.clientNames.some(c => c.toLowerCase().includes(search.toLowerCase()))
   )
 
-  // Global totals
   const totalWeekly = agents.reduce((s, a) => s + a.weeklyHours, 0)
   const totalClients = new Set(agents.flatMap(a => a.clientDetails.map(c => c.clientId))).size
 
@@ -167,44 +165,44 @@ export default function AgentsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Agents</h1>
-          <p className="text-gray-500 text-sm mt-1">
-            {agents.length} agent{agents.length !== 1 ? 's' : ''} · {totalClients} client{totalClients !== 1 ? 's' : ''} assigné{totalClients !== 1 ? 's' : ''} · {fmt(totalWeekly)} / semaine au total
+          <h1 className="font-serif text-2xl font-bold text-warm-900">Agents</h1>
+          <p className="text-warm-500 text-sm mt-1">
+            {agents.length} agent{agents.length !== 1 ? 's' : ''} · {totalClients} client{totalClients !== 1 ? 's' : ''} assigned · {fmt(totalWeekly)} / week total
           </p>
         </div>
         <button onClick={() => setShowForm(true)} className="btn-primary flex items-center gap-2">
-          <UserPlus size={18} /> Nouvel Agent
+          <UserPlus size={18} /> New Agent
         </button>
       </div>
 
       {/* Global stat cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="card flex items-center gap-3 py-4">
-          <div className="p-2.5 bg-blue-100 rounded-lg"><Users size={20} className="text-blue-600" /></div>
+          <div className="p-2.5 bg-sage-100 rounded-xl"><Users size={20} className="text-sage-600" /></div>
           <div>
-            <p className="text-xs text-gray-400">Total agents</p>
-            <p className="text-xl font-bold text-gray-900">{agents.length}</p>
+            <p className="text-xs text-warm-500">Total Agents</p>
+            <p className="text-xl font-bold text-warm-900">{agents.length}</p>
           </div>
         </div>
         <div className="card flex items-center gap-3 py-4">
-          <div className="p-2.5 bg-green-100 rounded-lg"><CalendarDays size={20} className="text-green-600" /></div>
+          <div className="p-2.5 bg-terra-100 rounded-xl"><CalendarDays size={20} className="text-terra-500" /></div>
           <div>
-            <p className="text-xs text-gray-400">Clients assignés</p>
-            <p className="text-xl font-bold text-gray-900">{totalClients}</p>
+            <p className="text-xs text-warm-500">Assigned Clients</p>
+            <p className="text-xl font-bold text-warm-900">{totalClients}</p>
           </div>
         </div>
         <div className="card flex items-center gap-3 py-4">
-          <div className="p-2.5 bg-purple-100 rounded-lg"><Clock size={20} className="text-purple-600" /></div>
+          <div className="p-2.5 bg-sage-100 rounded-xl"><Clock size={20} className="text-sage-600" /></div>
           <div>
-            <p className="text-xs text-gray-400">Heures / semaine</p>
-            <p className="text-xl font-bold text-gray-900">{fmt(totalWeekly)}</p>
+            <p className="text-xs text-warm-500">Hours / Week</p>
+            <p className="text-xl font-bold text-warm-900">{fmt(totalWeekly)}</p>
           </div>
         </div>
         <div className="card flex items-center gap-3 py-4">
-          <div className="p-2.5 bg-amber-100 rounded-lg"><TrendingUp size={20} className="text-amber-600" /></div>
+          <div className="p-2.5 bg-terra-100 rounded-xl"><TrendingUp size={20} className="text-terra-500" /></div>
           <div>
-            <p className="text-xs text-gray-400">Heures / mois</p>
-            <p className="text-xl font-bold text-gray-900">{fmt(Math.round(totalWeekly * 52 / 12))}</p>
+            <p className="text-xs text-warm-500">Hours / Month</p>
+            <p className="text-xl font-bold text-warm-900">{fmt(Math.round(totalWeekly * 52 / 12))}</p>
           </div>
         </div>
       </div>
@@ -214,7 +212,7 @@ export default function AgentsPage() {
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
         <input
           className="input pl-10"
-          placeholder="Rechercher un agent ou un client..."
+          placeholder="Search agents or clients..."
           value={search}
           onChange={e => setSearch(e.target.value)}
         />
@@ -224,11 +222,11 @@ export default function AgentsPage() {
       {showForm && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl p-8 w-full max-w-md">
-            <h2 className="text-xl font-bold text-gray-900 mb-6">Nouvel Agent</h2>
+            <h2 className="text-xl font-bold text-gray-900 mb-6">New Agent</h2>
             <form onSubmit={handleCreate} className="space-y-4">
               {error && <p className="text-sm text-red-600 bg-red-50 px-4 py-3 rounded-lg">{error}</p>}
               <div>
-                <label className="label">Nom complet</label>
+                <label className="label">Full Name</label>
                 <input className="input" value={form.full_name} onChange={e => setForm({ ...form, full_name: e.target.value })} required />
               </div>
               <div>
@@ -236,21 +234,21 @@ export default function AgentsPage() {
                 <input type="email" className="input" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} required />
               </div>
               <div>
-                <label className="label">Téléphone</label>
+                <label className="label">Phone</label>
                 <input className="input" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} />
               </div>
               <div>
-                <label className="label">Taux horaire ($/h)</label>
+                <label className="label">Hourly Rate ($/h)</label>
                 <input type="number" step="0.01" min="0" className="input" value={form.hourly_rate} onChange={e => setForm({ ...form, hourly_rate: e.target.value })} required />
               </div>
               <div>
-                <label className="label">Mot de passe temporaire</label>
+                <label className="label">Temporary Password</label>
                 <input type="password" className="input" value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} required minLength={6} />
               </div>
               <div className="flex gap-3 pt-2">
-                <button type="button" className="btn-secondary flex-1" onClick={() => setShowForm(false)}>Annuler</button>
+                <button type="button" className="btn-secondary flex-1" onClick={() => setShowForm(false)}>Cancel</button>
                 <button type="submit" className="btn-primary flex-1" disabled={saving}>
-                  {saving ? 'Création...' : 'Créer'}
+                  {saving ? 'Creating...' : 'Create'}
                 </button>
               </div>
             </form>
@@ -260,17 +258,17 @@ export default function AgentsPage() {
 
       {/* Agents table */}
       {loading ? (
-        <div className="py-12 text-center text-gray-400">Chargement...</div>
+        <div className="py-12 text-center text-gray-400">Loading...</div>
       ) : (
         <div className="space-y-3">
           {/* Table header */}
           <div className="hidden md:grid grid-cols-12 px-4 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wide">
             <div className="col-span-3">Agent</div>
             <div className="col-span-1 text-center">Clients</div>
-            <div className="col-span-3">Noms des clients</div>
-            <div className="col-span-1 text-center">/ sem</div>
-            <div className="col-span-1 text-center">/ 2 sem</div>
-            <div className="col-span-1 text-center">/ mois</div>
+            <div className="col-span-3">Client Names</div>
+            <div className="col-span-1 text-center">/ wk</div>
+            <div className="col-span-1 text-center">/ 2wk</div>
+            <div className="col-span-1 text-center">/ mo</div>
             <div className="col-span-2"></div>
           </div>
 
@@ -283,7 +281,7 @@ export default function AgentsPage() {
                   {/* Agent name + status */}
                   <div className="col-span-12 md:col-span-3 flex items-center gap-3">
                     <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
-                      <span className="text-blue-600 font-bold text-sm">{agent.full_name?.[0] ?? '?'}</span>
+                      <span className="text-sage-600 font-bold text-sm">{agent.full_name?.[0] ?? '?'}</span>
                     </div>
                     <div className="min-w-0">
                       <p className="font-semibold text-gray-900 truncate">{agent.full_name}</p>
@@ -303,7 +301,7 @@ export default function AgentsPage() {
                   {/* Client names */}
                   <div className="col-span-10 md:col-span-3 flex flex-wrap gap-1">
                     {agent.clientNames.length === 0 ? (
-                      <span className="text-xs text-gray-300">Aucun client</span>
+                      <span className="text-xs text-gray-300">No clients</span>
                     ) : (
                       agent.clientNames.map(name => (
                         <span key={name} className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
@@ -315,16 +313,16 @@ export default function AgentsPage() {
 
                   {/* Hours */}
                   <div className="col-span-4 md:col-span-1 text-center">
-                    <p className="text-sm font-bold text-blue-600">{fmt(agent.weeklyHours)}</p>
-                    <p className="text-xs text-gray-400 md:hidden">/ sem</p>
+                    <p className="text-sm font-bold text-sage-600">{fmt(agent.weeklyHours)}</p>
+                    <p className="text-xs text-gray-400 md:hidden">/ wk</p>
                   </div>
                   <div className="col-span-4 md:col-span-1 text-center">
-                    <p className="text-sm font-semibold text-indigo-600">{fmt(agent.biWeeklyHours)}</p>
-                    <p className="text-xs text-gray-400 md:hidden">/ 2 sem</p>
+                    <p className="text-sm font-semibold text-sage-700">{fmt(agent.biWeeklyHours)}</p>
+                    <p className="text-xs text-gray-400 md:hidden">/ 2wk</p>
                   </div>
                   <div className="col-span-4 md:col-span-1 text-center">
-                    <p className="text-sm font-semibold text-purple-600">{fmt(Math.round(agent.monthlyHours * 10) / 10)}</p>
-                    <p className="text-xs text-gray-400 md:hidden">/ mois</p>
+                    <p className="text-sm font-semibold text-terra-500">{fmt(Math.round(agent.monthlyHours * 10) / 10)}</p>
+                    <p className="text-xs text-gray-400 md:hidden">/ mo</p>
                   </div>
 
                   {/* Actions */}
@@ -332,16 +330,16 @@ export default function AgentsPage() {
                     {agent.clientCount > 0 && (
                       <button
                         onClick={() => toggleExpand(agent.id)}
-                        className="flex items-center gap-1 text-xs text-gray-500 hover:text-blue-600 px-2 py-1 rounded-lg hover:bg-blue-50 transition-colors"
+                        className="flex items-center gap-1 text-xs text-gray-500 hover:text-sage-600 px-2 py-1 rounded-lg hover:bg-blue-50 transition-colors"
                       >
-                        {isOpen ? <><ChevronUp size={14} /> Réduire</> : <><ChevronDown size={14} /> Détails</>}
+                        {isOpen ? <><ChevronUp size={14} /> Collapse</> : <><ChevronDown size={14} /> Details</>}
                       </button>
                     )}
                     <Link
                       href={`/agents/${agent.id}`}
-                      className="text-xs text-blue-600 hover:text-blue-800 font-medium px-2 py-1 rounded-lg hover:bg-blue-50 transition-colors"
+                      className="text-xs text-sage-600 hover:text-blue-800 font-medium px-2 py-1 rounded-lg hover:bg-blue-50 transition-colors"
                     >
-                      Profil →
+                      Profile →
                     </Link>
                   </div>
                 </div>
@@ -350,7 +348,7 @@ export default function AgentsPage() {
                 {isOpen && agent.clientDetails.length > 0 && (
                   <div className="border-t border-gray-100 bg-gray-50 px-5 py-4">
                     <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">
-                      Détail des affectations
+                      Assignment Details
                     </p>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                       {agent.clientDetails.map(cd => (
@@ -362,7 +360,7 @@ export default function AgentsPage() {
                               </div>
                               <p className="font-semibold text-gray-800 text-sm">{cd.clientName}</p>
                             </div>
-                            <span className="text-sm font-bold text-blue-600">{fmt(cd.weeklyHours)}<span className="text-xs font-normal text-gray-400">/sem</span></span>
+                            <span className="text-sm font-bold text-sage-600">{fmt(cd.weeklyHours)}<span className="text-xs font-normal text-gray-400">/wk</span></span>
                           </div>
 
                           {/* Day-by-day */}
@@ -387,7 +385,7 @@ export default function AgentsPage() {
                               const has = cd.schedules.some(s => s.day_of_week === d)
                               return (
                                 <span key={d} className={`text-xs px-1.5 py-0.5 rounded font-medium ${
-                                  has ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-300'
+                                  has ? 'bg-sage-600 text-white' : 'bg-warm-100 text-warm-300'
                                 }`}>
                                   {DAY_SHORT[d]}
                                 </span>
@@ -402,16 +400,16 @@ export default function AgentsPage() {
                     <div className="mt-4 flex items-center gap-6 pt-3 border-t border-gray-200">
                       <div className="flex items-center gap-2 text-sm">
                         <Clock size={14} className="text-blue-500" />
-                        <span className="text-gray-500">Hebdomadaire :</span>
-                        <span className="font-bold text-blue-600">{fmt(agent.weeklyHours)}</span>
+                        <span className="text-gray-500">Weekly:</span>
+                        <span className="font-bold text-sage-600">{fmt(agent.weeklyHours)}</span>
                       </div>
                       <div className="flex items-center gap-2 text-sm">
-                        <span className="text-gray-500">Bi-hebdomadaire :</span>
-                        <span className="font-bold text-indigo-600">{fmt(agent.biWeeklyHours)}</span>
+                        <span className="text-gray-500">Bi-weekly:</span>
+                        <span className="font-bold text-sage-700">{fmt(agent.biWeeklyHours)}</span>
                       </div>
                       <div className="flex items-center gap-2 text-sm">
-                        <span className="text-gray-500">Mensuel :</span>
-                        <span className="font-bold text-purple-600">{fmt(Math.round(agent.monthlyHours * 10) / 10)}</span>
+                        <span className="text-gray-500">Monthly:</span>
+                        <span className="font-bold text-terra-500">{fmt(Math.round(agent.monthlyHours * 10) / 10)}</span>
                       </div>
                     </div>
                   </div>
@@ -423,7 +421,7 @@ export default function AgentsPage() {
           {filtered.length === 0 && !loading && (
             <div className="py-16 text-center text-gray-400">
               <Users size={40} className="mx-auto mb-3 opacity-30" />
-              <p>Aucun agent trouvé</p>
+              <p>No agents found</p>
             </div>
           )}
         </div>

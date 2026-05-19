@@ -2,14 +2,14 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
-import { formatDuration } from '@caretrack/shared'
-import type { Profile, Client, TimeEntryWithRelations } from '@caretrack/shared'
+import { formatDuration } from '@/lib/types'
+import type { Profile, Client, TimeEntryWithRelations } from '@/lib/types'
 import { ArrowLeft, Save, Pencil, X, CalendarDays, Clock, Users, TrendingUp } from 'lucide-react'
 
 const DAY_ORDER = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday']
 const DAY_LABELS: Record<string,string> = {
-  monday:'Lundi', tuesday:'Mardi', wednesday:'Mercredi', thursday:'Jeudi',
-  friday:'Vendredi', saturday:'Samedi', sunday:'Dimanche',
+  monday:'Monday', tuesday:'Tuesday', wednesday:'Wednesday', thursday:'Thursday',
+  friday:'Friday', saturday:'Saturday', sunday:'Sunday',
 }
 
 interface AssignmentWithSchedule {
@@ -116,8 +116,8 @@ export default function AgentDetailPage() {
     await loadAll()
   }
 
-  if (loading) return <div className="p-8 text-gray-400">Chargement...</div>
-  if (!agent) return <div className="p-8 text-gray-400">Agent introuvable</div>
+  if (loading) return <div className="p-8 text-gray-400">Loading...</div>
+  if (!agent) return <div className="p-8 text-gray-400">Agent not found</div>
 
   const assignedIds = new Set(assignedClients.map(c => c.id))
   const unassignedClients = allClients.filter(c => !assignedIds.has(c.id))
@@ -134,7 +134,7 @@ export default function AgentDetailPage() {
   return (
     <div className="p-8 space-y-6">
       <button onClick={() => router.back()} className="flex items-center gap-2 text-gray-500 hover:text-gray-900 text-sm">
-        <ArrowLeft size={16} /> Retour aux agents
+        <ArrowLeft size={16} /> Back to agents
       </button>
 
       <div className="flex items-start justify-between">
@@ -148,7 +148,7 @@ export default function AgentDetailPage() {
               <button
                 onClick={() => setShowEditForm(true)}
                 className="text-gray-400 hover:text-blue-600 transition-colors"
-                title="Modifier"
+                title="Edit"
               >
                 <Pencil size={16} />
               </button>
@@ -160,7 +160,7 @@ export default function AgentDetailPage() {
           onClick={toggleActive}
           className={agent.is_active ? 'btn-danger' : 'btn-primary'}
         >
-          {agent.is_active ? 'Désactiver le compte' : 'Réactiver le compte'}
+          {agent.is_active ? 'Deactivate Account' : 'Reactivate Account'}
         </button>
       </div>
 
@@ -169,12 +169,12 @@ export default function AgentDetailPage() {
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl p-8 w-full max-w-md">
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-bold text-gray-900">Modifier l'agent</h2>
+              <h2 className="text-xl font-bold text-gray-900">Edit Agent</h2>
               <button onClick={() => setShowEditForm(false)}><X size={20} className="text-gray-400" /></button>
             </div>
             <form onSubmit={handleEditAgent} className="space-y-4">
               <div>
-                <label className="label">Nom complet</label>
+                <label className="label">Full Name</label>
                 <input
                   className="input"
                   value={editForm.full_name}
@@ -183,19 +183,19 @@ export default function AgentDetailPage() {
                 />
               </div>
               <div>
-                <label className="label">Téléphone</label>
+                <label className="label">Phone</label>
                 <input
                   className="input"
                   value={editForm.phone}
                   onChange={e => setEditForm({ ...editForm, phone: e.target.value })}
-                  placeholder="Optionnel"
+                  placeholder="Optional"
                 />
               </div>
-              <p className="text-xs text-gray-400">L'email ne peut pas être modifié ici.</p>
+              <p className="text-xs text-gray-400">Email cannot be changed here.</p>
               <div className="flex gap-3 pt-2">
-                <button type="button" className="btn-secondary flex-1" onClick={() => setShowEditForm(false)}>Annuler</button>
+                <button type="button" className="btn-secondary flex-1" onClick={() => setShowEditForm(false)}>Cancel</button>
                 <button type="submit" className="btn-primary flex-1 flex items-center justify-center gap-1" disabled={editSaving}>
-                  <Save size={15} /> {editSaving ? 'Enregistrement...' : 'Enregistrer'}
+                  <Save size={15} /> {editSaving ? 'Saving...' : 'Save'}
                 </button>
               </div>
             </form>
@@ -205,7 +205,7 @@ export default function AgentDetailPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="card md:col-span-1">
-          <h2 className="font-semibold text-gray-900 mb-4">Taux horaire</h2>
+          <h2 className="font-semibold text-gray-900 mb-4">Hourly Rate</h2>
           <div className="flex items-center gap-3">
             <div className="relative flex-1">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
@@ -217,22 +217,22 @@ export default function AgentDetailPage() {
               />
             </div>
             <button onClick={saveHourlyRate} disabled={saving} className="btn-primary flex items-center gap-1">
-              <Save size={16} /> Enregistrer
+              <Save size={16} /> Save
             </button>
           </div>
         </div>
 
         <div className="card">
-          <p className="text-sm text-gray-500">Téléphone</p>
+          <p className="text-sm text-gray-500">Phone</p>
           <p className="font-semibold text-gray-900 mt-1">{agent.phone || '—'}</p>
         </div>
 
         <div className="card">
-          <p className="text-sm text-gray-500">Statut</p>
+          <p className="text-sm text-gray-500">Status</p>
           <span className={`inline-flex items-center gap-1 mt-1 text-sm font-semibold px-2.5 py-1 rounded-full ${
             agent.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
           }`}>
-            {agent.is_active ? '● Actif' : '● Inactif'}
+            {agent.is_active ? '● Active' : '● Inactive'}
           </span>
         </div>
       </div>
@@ -242,28 +242,28 @@ export default function AgentDetailPage() {
         <div className="card flex items-center gap-3">
           <div className="p-2.5 bg-blue-100 rounded-lg"><Users className="text-blue-600" size={20} /></div>
           <div>
-            <p className="text-xs text-gray-500">Clients assignés</p>
+            <p className="text-xs text-gray-500">Assigned Clients</p>
             <p className="text-xl font-bold text-gray-900">{assignments.length}</p>
           </div>
         </div>
         <div className="card flex items-center gap-3">
           <div className="p-2.5 bg-green-100 rounded-lg"><Clock className="text-green-600" size={20} /></div>
           <div>
-            <p className="text-xs text-gray-500">Heures / semaine</p>
+            <p className="text-xs text-gray-500">Hours / Week</p>
             <p className="text-xl font-bold text-gray-900">{weeklyHours.toFixed(1)}h</p>
           </div>
         </div>
         <div className="card flex items-center gap-3">
           <div className="p-2.5 bg-purple-100 rounded-lg"><CalendarDays className="text-purple-600" size={20} /></div>
           <div>
-            <p className="text-xs text-gray-500">Heures / 2 semaines</p>
+            <p className="text-xs text-gray-500">Hours / 2 Weeks</p>
             <p className="text-xl font-bold text-gray-900">{biWeeklyHours.toFixed(1)}h</p>
           </div>
         </div>
         <div className="card flex items-center gap-3">
           <div className="p-2.5 bg-orange-100 rounded-lg"><TrendingUp className="text-orange-600" size={20} /></div>
           <div>
-            <p className="text-xs text-gray-500">Heures / mois</p>
+            <p className="text-xs text-gray-500">Hours / Month</p>
             <p className="text-xl font-bold text-gray-900">{monthlyHours.toFixed(1)}h</p>
           </div>
         </div>
@@ -272,22 +272,22 @@ export default function AgentDetailPage() {
       {/* Assigned Clients */}
       <div className="card">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="font-semibold text-gray-900">Clients assignés ({assignedClients.length})</h2>
+          <h2 className="font-semibold text-gray-900">Assigned Clients ({assignedClients.length})</h2>
           {unassignedClients.length > 0 && (
             <button className="btn-secondary text-sm" onClick={() => setShowAddClient(!showAddClient)}>
-              + Ajouter un client
+              + Add a client
             </button>
           )}
         </div>
 
         {showAddClient && (
           <div className="mb-4 p-4 bg-gray-50 rounded-xl border border-gray-200">
-            <p className="text-sm font-medium text-gray-700 mb-2">Sélectionner un client :</p>
+            <p className="text-sm font-medium text-gray-700 mb-2">Select a client:</p>
             <div className="space-y-2">
               {unassignedClients.map(c => (
                 <div key={c.id} className="flex justify-between items-center bg-white px-4 py-2 rounded-lg border border-gray-100">
                   <span className="text-sm text-gray-900">{c.full_name}</span>
-                  <button onClick={() => addClient(c.id)} className="text-xs btn-primary py-1 px-3">Assigner</button>
+                  <button onClick={() => addClient(c.id)} className="text-xs btn-primary py-1 px-3">Assign</button>
                 </div>
               ))}
             </div>
@@ -298,18 +298,17 @@ export default function AgentDetailPage() {
           {assignedClients.map(c => (
             <div key={c.id} className="flex justify-between items-center px-4 py-3 bg-gray-50 rounded-lg">
               <span className="font-medium text-gray-900">{c.full_name}</span>
-              <button onClick={() => removeClient(c.id)} className="text-xs text-red-600 hover:text-red-800">Retirer</button>
+              <button onClick={() => removeClient(c.id)} className="text-xs text-red-600 hover:text-red-800">Remove</button>
             </div>
           ))}
           {assignedClients.length === 0 && (
-            <p className="text-gray-400 text-sm py-2 text-center">Aucun client assigné</p>
+            <p className="text-gray-400 text-sm py-2 text-center">No clients assigned</p>
           )}
         </div>
       </div>
 
-      {/* Planning section */}
+      {/* Weekly schedule */}
       {assignments.length > 0 && (() => {
-        // Build per-day breakdown across all active assignments
         const byDay: Record<string, { clientName: string; start: string; end: string; hours: number }[]> = {}
         let weeklyTotal = 0
         for (const a of assignments) {
@@ -322,18 +321,15 @@ export default function AgentDetailPage() {
             byDay[s.day_of_week].push({ clientName: a.client.full_name, start: s.start_time.slice(0,5), end: s.end_time.slice(0,5), hours: h })
           }
         }
-        const now = new Date()
-        const startOfWeek = new Date(now); startOfWeek.setDate(now.getDate() - ((now.getDay() + 6) % 7)); startOfWeek.setHours(0,0,0,0)
-        const endOfWeek = new Date(startOfWeek); endOfWeek.setDate(startOfWeek.getDate() + 6)
         return (
           <div className="card">
             <div className="flex items-center justify-between mb-4">
               <h2 className="font-semibold text-gray-900 flex items-center gap-2">
-                <CalendarDays size={18} className="text-blue-600" /> Planning hebdomadaire
+                <CalendarDays size={18} className="text-blue-600" /> Weekly Schedule
               </h2>
               <div className="flex items-center gap-1 text-blue-600 font-semibold">
                 <Clock size={16} />
-                <span>{weeklyTotal.toFixed(1)}h / semaine</span>
+                <span>{weeklyTotal.toFixed(1)}h / week</span>
               </div>
             </div>
             <div className="space-y-2">
@@ -369,16 +365,16 @@ export default function AgentDetailPage() {
       {/* Time entries */}
       <div className="card p-0 overflow-hidden">
         <div className="p-6 border-b border-gray-100">
-          <h2 className="font-semibold text-gray-900">Historique des pointages</h2>
+          <h2 className="font-semibold text-gray-900">Time Entry History</h2>
         </div>
         <table className="w-full">
           <thead className="border-b border-gray-100">
             <tr>
               <th className="table-header">Client</th>
-              <th className="table-header">Arrivée</th>
-              <th className="table-header">Départ</th>
-              <th className="table-header">Durée</th>
-              <th className="table-header">Statut</th>
+              <th className="table-header">Clock In</th>
+              <th className="table-header">Clock Out</th>
+              <th className="table-header">Duration</th>
+              <th className="table-header">Status</th>
               <th className="table-header">Photos</th>
             </tr>
           </thead>
@@ -387,10 +383,10 @@ export default function AgentDetailPage() {
               <tr key={e.id} className="hover:bg-gray-50">
                 <td className="table-cell font-medium">{(e as any).client?.full_name}</td>
                 <td className="table-cell text-gray-500 text-xs">
-                  {new Date(e.clock_in_at).toLocaleString('fr-FR', { day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}
+                  {new Date(e.clock_in_at).toLocaleString('en-US', { month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' })}
                 </td>
                 <td className="table-cell text-gray-500 text-xs">
-                  {e.clock_out_at ? new Date(e.clock_out_at).toLocaleString('fr-FR', { day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : '—'}
+                  {e.clock_out_at ? new Date(e.clock_out_at).toLocaleString('en-US', { month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' }) : '—'}
                 </td>
                 <td className="table-cell font-semibold text-blue-600">{formatDuration(e.duration_minutes)}</td>
                 <td className="table-cell">
@@ -411,7 +407,7 @@ export default function AgentDetailPage() {
               </tr>
             ))}
             {entries.length === 0 && (
-              <tr><td colSpan={6} className="py-8 text-center text-gray-400">Aucun pointage</td></tr>
+              <tr><td colSpan={6} className="py-8 text-center text-gray-400">No time entries</td></tr>
             )}
           </tbody>
         </table>

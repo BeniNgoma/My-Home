@@ -4,22 +4,22 @@ import { createClient } from '@/lib/supabase'
 import { CalendarDays, Plus, X, Save, Pencil, AlertTriangle, Clock } from 'lucide-react'
 
 const DAYS = [
-  { key: 'monday',    label: 'Lun' },
-  { key: 'tuesday',   label: 'Mar' },
-  { key: 'wednesday', label: 'Mer' },
-  { key: 'thursday',  label: 'Jeu' },
-  { key: 'friday',    label: 'Ven' },
-  { key: 'saturday',  label: 'Sam' },
-  { key: 'sunday',    label: 'Dim' },
+  { key: 'monday',    label: 'Mon' },
+  { key: 'tuesday',   label: 'Tue' },
+  { key: 'wednesday', label: 'Wed' },
+  { key: 'thursday',  label: 'Thu' },
+  { key: 'friday',    label: 'Fri' },
+  { key: 'saturday',  label: 'Sat' },
+  { key: 'sunday',    label: 'Sun' },
 ]
 
 const DAY_LABELS: Record<string, string> = {
-  monday: 'Lundi', tuesday: 'Mardi', wednesday: 'Mercredi',
-  thursday: 'Jeudi', friday: 'Vendredi', saturday: 'Samedi', sunday: 'Dimanche',
+  monday: 'Monday', tuesday: 'Tuesday', wednesday: 'Wednesday',
+  thursday: 'Thursday', friday: 'Friday', saturday: 'Saturday', sunday: 'Sunday',
 }
 
 const RECURRENCE_LABELS: Record<string, string> = {
-  permanent: 'Permanent', '2_weeks': '2 semaines', '1_month': '1 mois', custom: 'Personnalisé',
+  permanent: 'Permanent', '2_weeks': '2 weeks', '1_month': '1 month', custom: 'Custom',
 }
 
 type DaySchedule = { start_time: string; end_time: string }
@@ -71,7 +71,6 @@ export default function AffectationsPage() {
   const [error, setError] = useState('')
   const [conflicts, setConflicts] = useState<string[]>([])
 
-  // Form state
   const [form, setForm] = useState({
     agent_id: '',
     client_id: '',
@@ -172,7 +171,7 @@ export default function AffectationsPage() {
         p_exclude_id: editingId,
       })
       for (const row of data || []) {
-        found.push(`${DAY_LABELS[key]} ${sched.start_time}-${sched.end_time} : déjà assigné à ${row.conflict_client} (${row.conflict_start.slice(0,5)}-${row.conflict_end.slice(0,5)})`)
+        found.push(`${DAY_LABELS[key]} ${sched.start_time}-${sched.end_time}: already assigned to ${row.conflict_client} (${row.conflict_start.slice(0,5)}-${row.conflict_end.slice(0,5)})`)
       }
     }
     return found
@@ -185,11 +184,11 @@ export default function AffectationsPage() {
 
     const activeDays = DAYS.filter(d => selectedDays[d.key])
     if (activeDays.length === 0) {
-      setError('Sélectionnez au moins un jour de travail.')
+      setError('Please select at least one working day.')
       return
     }
     if (!form.agent_id || !form.client_id) {
-      setError('Agent et client sont obligatoires.')
+      setError('Agent and client are required.')
       return
     }
 
@@ -210,7 +209,6 @@ export default function AffectationsPage() {
           end_date: form.end_date || null,
           notes: form.notes || null,
         }).eq('id', editingId)
-        // Delete old schedules
         await supabase.from('assignment_schedules').delete().eq('assignment_id', editingId)
       } else {
         const { data: newAssign, error: insertErr } = await supabase
@@ -226,11 +224,10 @@ export default function AffectationsPage() {
           })
           .select('id')
           .single()
-        if (insertErr || !newAssign) throw new Error(insertErr?.message || 'Erreur création')
+        if (insertErr || !newAssign) throw new Error(insertErr?.message || 'Creation error')
         assignmentId = newAssign.id
       }
 
-      // Insert schedules
       const scheduleRows = activeDays.map(({ key }) => ({
         assignment_id: assignmentId!,
         day_of_week: key,
@@ -264,11 +261,11 @@ export default function AffectationsPage() {
     <div className="p-8 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Affectations</h1>
-          <p className="text-gray-500 text-sm mt-1">{activeCount} affectation{activeCount !== 1 ? 's' : ''} active{activeCount !== 1 ? 's' : ''}</p>
+          <h1 className="text-2xl font-bold text-gray-900">Assignments</h1>
+          <p className="text-gray-500 text-sm mt-1">{activeCount} active assignment{activeCount !== 1 ? 's' : ''}</p>
         </div>
         <button onClick={openCreate} className="btn-primary flex items-center gap-2">
-          <Plus size={18} /> Nouvelle affectation
+          <Plus size={18} /> New Assignment
         </button>
       </div>
 
@@ -278,7 +275,7 @@ export default function AffectationsPage() {
           <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center p-6 border-b border-gray-100">
               <h2 className="text-xl font-bold text-gray-900">
-                {editingId ? 'Modifier l\'affectation' : 'Nouvelle affectation'}
+                {editingId ? 'Edit Assignment' : 'New Assignment'}
               </h2>
               <button onClick={() => setShowForm(false)}><X size={20} className="text-gray-400" /></button>
             </div>
@@ -290,7 +287,7 @@ export default function AffectationsPage() {
               {conflicts.length > 0 && (
                 <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3">
                   <p className="text-sm font-semibold text-amber-800 flex items-center gap-2 mb-2">
-                    <AlertTriangle size={16} /> Conflits d'horaires détectés
+                    <AlertTriangle size={16} /> Schedule conflicts detected
                   </p>
                   {conflicts.map((c, i) => (
                     <p key={i} className="text-sm text-amber-700 ml-6">• {c}</p>
@@ -308,7 +305,7 @@ export default function AffectationsPage() {
                     required
                     disabled={!!editingId}
                   >
-                    <option value="">Sélectionner...</option>
+                    <option value="">Select...</option>
                     {agents.map(a => <option key={a.id} value={a.id}>{a.full_name}</option>)}
                   </select>
                 </div>
@@ -321,14 +318,14 @@ export default function AffectationsPage() {
                     required
                     disabled={!!editingId}
                   >
-                    <option value="">Sélectionner...</option>
+                    <option value="">Select...</option>
                     {clients.map(c => <option key={c.id} value={c.id}>{c.full_name}</option>)}
                   </select>
                 </div>
               </div>
 
               <div>
-                <label className="label">Type de récurrence</label>
+                <label className="label">Recurrence Type</label>
                 <div className="flex gap-2 flex-wrap">
                   {Object.entries(RECURRENCE_LABELS).map(([val, lbl]) => (
                     <button
@@ -352,7 +349,7 @@ export default function AffectationsPage() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="label">Date de début *</label>
+                  <label className="label">Start Date *</label>
                   <input
                     type="date"
                     className="input"
@@ -366,7 +363,7 @@ export default function AffectationsPage() {
                 </div>
                 {form.recurrence_type !== 'permanent' && (
                   <div>
-                    <label className="label">Date de fin</label>
+                    <label className="label">End Date</label>
                     <input
                       type="date"
                       className="input"
@@ -380,7 +377,7 @@ export default function AffectationsPage() {
 
               {/* Schedule */}
               <div>
-                <label className="label mb-2">Planning hebdomadaire *</label>
+                <label className="label mb-2">Weekly Schedule *</label>
                 <div className="space-y-3">
                   {DAYS.map(({ key, label }) => (
                     <div key={key} className="flex items-center gap-3">
@@ -428,20 +425,20 @@ export default function AffectationsPage() {
               </div>
 
               <div>
-                <label className="label">Notes (optionnel)</label>
+                <label className="label">Notes (optional)</label>
                 <textarea
                   className="input resize-none"
                   rows={2}
                   value={form.notes}
                   onChange={e => setForm({ ...form, notes: e.target.value })}
-                  placeholder="Instructions particulières..."
+                  placeholder="Special instructions..."
                 />
               </div>
 
               <div className="flex gap-3 pt-2">
-                <button type="button" className="btn-secondary flex-1" onClick={() => setShowForm(false)}>Annuler</button>
+                <button type="button" className="btn-secondary flex-1" onClick={() => setShowForm(false)}>Cancel</button>
                 <button type="submit" className="btn-primary flex-1 flex items-center justify-center gap-2" disabled={saving}>
-                  <Save size={16} /> {saving ? 'Enregistrement...' : 'Enregistrer'}
+                  <Save size={16} /> {saving ? 'Saving...' : 'Save'}
                 </button>
               </div>
             </form>
@@ -451,7 +448,7 @@ export default function AffectationsPage() {
 
       {/* List */}
       {loading ? (
-        <div className="py-12 text-center text-gray-400">Chargement...</div>
+        <div className="py-12 text-center text-gray-400">Loading...</div>
       ) : (
         <div className="space-y-3">
           {assignments.map(a => {
@@ -508,7 +505,7 @@ export default function AffectationsPage() {
                         )
                       })}
                       {dayList.length === 0 && (
-                        <span className="text-xs text-gray-400">Aucun créneau défini</span>
+                        <span className="text-xs text-gray-400">No schedule defined</span>
                       )}
                     </div>
 
@@ -516,12 +513,12 @@ export default function AffectationsPage() {
                     <div className="mt-2 flex items-center gap-4 text-xs text-gray-400">
                       <span className="flex items-center gap-1">
                         <CalendarDays size={12} />
-                        {new Date(a.start_date).toLocaleDateString('fr-FR')}
-                        {a.end_date ? ` → ${new Date(a.end_date).toLocaleDateString('fr-FR')}` : ' (permanent)'}
+                        {new Date(a.start_date).toLocaleDateString('en-US')}
+                        {a.end_date ? ` → ${new Date(a.end_date).toLocaleDateString('en-US')}` : ' (permanent)'}
                       </span>
                       <span className="flex items-center gap-1 text-blue-600 font-semibold">
                         <Clock size={12} />
-                        {wh.toFixed(1)}h / semaine
+                        {wh.toFixed(1)}h / week
                       </span>
                       {a.notes && (
                         <span className="text-amber-600 italic truncate max-w-xs">{a.notes}</span>
@@ -534,7 +531,7 @@ export default function AffectationsPage() {
                       <button
                         onClick={() => openEdit(a)}
                         className="p-2 text-gray-400 hover:text-blue-600 rounded-lg hover:bg-blue-50 transition-colors"
-                        title="Modifier"
+                        title="Edit"
                       >
                         <Pencil size={16} />
                       </button>
@@ -544,14 +541,14 @@ export default function AffectationsPage() {
                         onClick={() => deactivate(a.id)}
                         className="text-xs px-3 py-1.5 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 transition-colors"
                       >
-                        Désactiver
+                        Deactivate
                       </button>
                     ) : (
                       <button
                         onClick={() => reactivate(a.id)}
                         className="text-xs px-3 py-1.5 rounded-lg border border-green-200 text-green-600 hover:bg-green-50 transition-colors"
                       >
-                        Réactiver
+                        Reactivate
                       </button>
                     )}
                   </div>
@@ -562,7 +559,7 @@ export default function AffectationsPage() {
           {assignments.length === 0 && (
             <div className="py-16 text-center text-gray-400">
               <CalendarDays size={40} className="mx-auto mb-3 opacity-30" />
-              <p>Aucune affectation. Créez la première !</p>
+              <p>No assignments. Create the first one!</p>
             </div>
           )}
         </div>

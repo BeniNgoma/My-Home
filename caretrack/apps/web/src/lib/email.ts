@@ -2,7 +2,7 @@ import { Resend } from 'resend'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
-const FROM = 'My Home Support <noreply@myhomesupport.app>'
+const FROM = process.env.EMAIL_FROM ?? 'My Home Support <onboarding@resend.dev>'
 
 // ── Welcome email after org registration ─────────────────────────
 export async function sendWelcomeEmail({
