@@ -2,5 +2,15 @@
   "buildCommand": "npm run build --workspace=apps/web",
   "outputDirectory": "apps/web/.next",
   "framework": "nextjs",
-  "installCommand": "npm install"
+  "installCommand": "npm install",
+  "crons": [
+    {
+      "path": "/api/send-alerts?type=missed_clockout",
+      "schedule": "0 12 * * *"
+    },
+    {
+      "path": "/api/send-alerts?type=daily_summary",
+      "schedule": "0 18 * * *"
+    }
+  ]
 }
