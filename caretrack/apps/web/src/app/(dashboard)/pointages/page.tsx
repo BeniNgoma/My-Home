@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
 import { formatDuration } from '@/lib/types'
 import type { TimeEntryWithRelations, Profile, Client } from '@/lib/types'
-import { Download, MapPin, X, AlertTriangle, Plus, Clock, LogIn, LogOut } from 'lucide-react'
+import { Download, MapPin, X, AlertTriangle, Plus, Clock, LogIn, LogOut, Camera } from 'lucide-react'
 import * as XLSX from 'xlsx'
 
 interface EntryWithAll extends TimeEntryWithRelations {
@@ -57,7 +57,7 @@ export default function PointagesPage() {
     const [{ data: entriesData }, { data: agentsData }, { data: clientsData }] = await Promise.all([
       supabase
         .from('time_entries')
-        .select('*, agent:profiles!agent_id(id,full_name,email), client:clients!client_id(id,full_name,address)')
+        .select('*, clock_in_photo_url, clock_out_photo_url, agent:profiles!agent_id(id,full_name,email), client:clients!client_id(id,full_name,address)')
         .order('clock_in_at', { ascending: false })
         .limit(500),
       supabase.from('profiles').select('*').eq('role', 'agent').eq('is_active', true).order('full_name'),
@@ -305,6 +305,9 @@ export default function PointagesPage() {
                           'bg-warm-200 text-warm-600'
                         }`}>{e.status}</span>
                         {e.gps_alert && <AlertTriangle size={13} className="text-amber-500" />}
+                        {(e.clock_in_photo_url || e.clock_out_photo_url) && (
+                          <Camera size={13} className="text-sage-400" title="Has photos" />
+                        )}
                       </div>
                     </td>
                     <td className="table-cell" onClick={ev => ev.stopPropagation()}>
@@ -479,6 +482,49 @@ export default function PointagesPage() {
                 <p className="text-xs text-sage-500 mb-1">Total Duration</p>
                 <p className="text-2xl font-bold text-sage-700">{formatDuration(selected.duration_minutes)}</p>
               </div>
+              {/* Photos */}
+              {(selected.clock_in_photo_url || selected.clock_out_photo_url) && (
+                <div>
+                  <p className="text-xs text-warm-400 font-semibold mb-2 flex items-center gap-1">
+                    <Camera size={12} /> Photos
+                  </p>
+                  <div className="grid grid-cols-2 gap-3">
+                    {selected.clock_in_photo_url ? (
+                      <div>
+                        <p className="text-xs text-warm-400 mb-1">Clock In</p>
+                        <a href={selected.clock_in_photo_url} target="_blank" rel="noreferrer">
+                          <img
+                            src={selected.clock_in_photo_url}
+                            alt="Clock-in photo"
+                            className="w-full h-36 object-cover rounded-xl border border-warm-100 hover:opacity-90 transition-opacity"
+                          />
+                        </a>
+                      </div>
+                    ) : (
+                      <div className="h-36 bg-warm-50 rounded-xl flex items-center justify-center">
+                        <p className="text-xs text-warm-300">No clock-in photo</p>
+                      </div>
+                    )}
+                    {selected.clock_out_photo_url ? (
+                      <div>
+                        <p className="text-xs text-warm-400 mb-1">Clock Out</p>
+                        <a href={selected.clock_out_photo_url} target="_blank" rel="noreferrer">
+                          <img
+                            src={selected.clock_out_photo_url}
+                            alt="Clock-out photo"
+                            className="w-full h-36 object-cover rounded-xl border border-warm-100 hover:opacity-90 transition-opacity"
+                          />
+                        </a>
+                      </div>
+                    ) : (
+                      <div className="h-36 bg-warm-50 rounded-xl flex items-center justify-center">
+                        <p className="text-xs text-warm-300">No clock-out photo</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
               {selected.clock_in_latitude && selected.clock_in_longitude && (
                 <a href={`https://maps.google.com/?q=${selected.clock_in_latitude},${selected.clock_in_longitude}`}
                   target="_blank" className="flex items-center gap-2 text-sage-600 hover:text-sage-800 text-sm">
