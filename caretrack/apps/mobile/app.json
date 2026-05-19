@@ -49,6 +49,17 @@
         {
           "locationAlwaysAndWhenInUsePermission": "CareTrack utilise votre position pour valider les pointages."
         }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "compileSdkVersion": 34,
+            "targetSdkVersion": 34,
+            "buildToolsVersion": "34.0.0",
+            "kotlinVersion": "1.9.0"
+          }
+        }
       ]
     ],
     "scheme": "caretrack",
