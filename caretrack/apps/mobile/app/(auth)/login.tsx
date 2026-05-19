@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
-  KeyboardAvoidingView, Platform, ActivityIndicator, Alert
+  KeyboardAvoidingView, Platform, ActivityIndicator,
+  Alert, Image, StatusBar,
 } from 'react-native'
 import { supabase } from '../../lib/supabase'
 
@@ -9,112 +10,233 @@ export default function LoginScreen() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
+  const [focused, setFocused] = useState<'email' | 'password' | null>(null)
 
   async function handleLogin() {
     if (!email.trim() || !password.trim()) {
-      Alert.alert('Erreur', 'Veuillez remplir tous les champs.')
+      Alert.alert('Champs manquants', 'Veuillez remplir votre email et mot de passe.')
       return
     }
     setLoading(true)
-    const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password })
+    const { error } = await supabase.auth.signInWithPassword({
+      email: email.trim().toLowerCase(),
+      password,
+    })
     setLoading(false)
-    if (error) Alert.alert('Erreur de connexion', error.message)
+    if (error) Alert.alert('Connexion impossible', error.message)
   }
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
-      <View style={styles.card}>
-        <View style={styles.logoContainer}>
-          <Text style={styles.logoText}>🏥</Text>
-          <Text style={styles.appName}>CareTrack</Text>
-          <Text style={styles.subtitle}>Portail Agent</Text>
+    <>
+      <StatusBar barStyle="light-content" />
+      <KeyboardAvoidingView
+        style={styles.root}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+        {/* ── Top brand panel ── */}
+        <View style={styles.brandPanel}>
+          <View style={styles.logoWrap}>
+            <Image
+              source={require('../../assets/icon.png')}
+              style={styles.logo}
+              resizeMode="contain"
+            />
+          </View>
+          <Text style={styles.appName}>My Home Support</Text>
+          <Text style={styles.tagline}>Portail Agent</Text>
         </View>
 
-        <View style={styles.form}>
-          <Text style={styles.label}>Email</Text>
-          <TextInput
-            style={styles.input}
-            value={email}
-            onChangeText={setEmail}
-            placeholder="agent@caretrack.com"
-            placeholderTextColor="#9CA3AF"
-            keyboardType="email-address"
-            autoCapitalize="none"
-            autoComplete="email"
-          />
+        {/* ── Form card ── */}
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Connexion</Text>
+          <Text style={styles.cardSub}>Accédez à votre espace de pointage</Text>
 
-          <Text style={styles.label}>Mot de passe</Text>
-          <TextInput
-            style={styles.input}
-            value={password}
-            onChangeText={setPassword}
-            placeholder="••••••••"
-            placeholderTextColor="#9CA3AF"
-            secureTextEntry
-            autoComplete="password"
-          />
+          <View style={styles.fieldGroup}>
+            <Text style={styles.label}>Email</Text>
+            <TextInput
+              style={[styles.input, focused === 'email' && styles.inputFocused]}
+              value={email}
+              onChangeText={setEmail}
+              onFocus={() => setFocused('email')}
+              onBlur={() => setFocused(null)}
+              placeholder="votre@email.com"
+              placeholderTextColor="#C4C0BC"
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoComplete="email"
+              returnKeyType="next"
+            />
+          </View>
+
+          <View style={styles.fieldGroup}>
+            <Text style={styles.label}>Mot de passe</Text>
+            <TextInput
+              style={[styles.input, focused === 'password' && styles.inputFocused]}
+              value={password}
+              onChangeText={setPassword}
+              onFocus={() => setFocused('password')}
+              onBlur={() => setFocused(null)}
+              placeholder="••••••••"
+              placeholderTextColor="#C4C0BC"
+              secureTextEntry
+              autoComplete="password"
+              returnKeyType="done"
+              onSubmitEditing={handleLogin}
+            />
+          </View>
 
           <TouchableOpacity
-            style={[styles.button, loading && styles.buttonDisabled]}
+            style={[styles.btn, loading && styles.btnDisabled]}
             onPress={handleLogin}
             disabled={loading}
+            activeOpacity={0.85}
           >
             {loading
-              ? <ActivityIndicator color="#fff" />
-              : <Text style={styles.buttonText}>Se connecter</Text>
+              ? <ActivityIndicator color="#fff" size="small" />
+              : <Text style={styles.btnText}>Se connecter</Text>
             }
           </TouchableOpacity>
+
+          <Text style={styles.helpText}>
+            Besoin d'aide ? Contactez votre administrateur.
+          </Text>
         </View>
-      </View>
-    </KeyboardAvoidingView>
+
+        {/* ── Footer ── */}
+        <Text style={styles.footer}>© 2025 My Home Support</Text>
+      </KeyboardAvoidingView>
+    </>
   )
 }
 
 const styles = StyleSheet.create({
-  container: {
+  root: {
     flex: 1,
-    backgroundColor: '#6b90c2',
-    justifyContent: 'center',
-    padding: 24,
+    backgroundColor: '#2D6A4F',
   },
-  card: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 32,
+
+  brandPanel: {
+    flex: 0,
+    alignItems: 'center',
+    paddingTop: 72,
+    paddingBottom: 32,
+    paddingHorizontal: 24,
+  },
+  logoWrap: {
+    width: 84,
+    height: 84,
+    borderRadius: 22,
+    overflow: 'hidden',
+    marginBottom: 16,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 10,
+  },
+  logo: {
+    width: 84,
+    height: 84,
+  },
+  appName: {
+    fontSize: 26,
+    fontWeight: '800',
+    color: '#fff',
+    letterSpacing: -0.5,
+    marginBottom: 4,
+  },
+  tagline: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#A7D4BC',
+    letterSpacing: 3,
+    textTransform: 'uppercase',
+  },
+
+  card: {
+    flex: 1,
+    backgroundColor: '#FAFAF8',
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    paddingHorizontal: 28,
+    paddingTop: 36,
+    paddingBottom: 32,
+  },
+  cardTitle: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: '#1C1917',
+    marginBottom: 4,
+  },
+  cardSub: {
+    fontSize: 14,
+    color: '#9C9690',
+    marginBottom: 32,
+  },
+
+  fieldGroup: {
+    marginBottom: 16,
+  },
+  label: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#5C554B',
+    marginBottom: 8,
+    letterSpacing: 0.3,
+  },
+  input: {
+    backgroundColor: '#fff',
+    borderWidth: 1.5,
+    borderColor: '#E8E5DE',
+    borderRadius: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    fontSize: 16,
+    color: '#1C1917',
+  },
+  inputFocused: {
+    borderColor: '#2D6A4F',
+    shadowColor: '#2D6A4F',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+
+  btn: {
+    backgroundColor: '#2D6A4F',
+    borderRadius: 14,
+    paddingVertical: 17,
+    alignItems: 'center',
+    marginTop: 8,
+    shadowColor: '#2D6A4F',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.3,
     shadowRadius: 12,
     elevation: 6,
   },
-  logoContainer: {
-    alignItems: 'center',
-    marginBottom: 32,
+  btnDisabled: { opacity: 0.6, shadowOpacity: 0 },
+  btnText: {
+    color: '#fff',
+    fontSize: 17,
+    fontWeight: '800',
+    letterSpacing: 0.3,
   },
-  logoText: { fontSize: 48, marginBottom: 8 },
-  appName: { fontSize: 28, fontWeight: '700', color: '#1E3A5F', marginBottom: 4 },
-  subtitle: { fontSize: 14, color: '#6B7280' },
-  form: { gap: 4 },
-  label: { fontSize: 14, fontWeight: '600', color: '#374151', marginBottom: 4, marginTop: 12 },
-  input: {
-    backgroundColor: '#F9FAFB',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    borderRadius: 10,
-    padding: 14,
-    fontSize: 16,
-    color: '#111827',
+
+  helpText: {
+    textAlign: 'center',
+    fontSize: 12,
+    color: '#B8B1A5',
+    marginTop: 20,
   },
-  button: {
-    backgroundColor: '#2563EB',
-    borderRadius: 10,
-    padding: 16,
-    alignItems: 'center',
-    marginTop: 24,
+
+  footer: {
+    backgroundColor: '#FAFAF8',
+    textAlign: 'center',
+    fontSize: 11,
+    color: '#C4C0BC',
+    paddingBottom: 32,
+    paddingTop: 4,
+    alignSelf: 'stretch',
   },
-  buttonDisabled: { opacity: 0.6 },
-  buttonText: { color: '#fff', fontSize: 16, fontWeight: '700' },
 })
