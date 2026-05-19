@@ -1,6 +1,9 @@
 import { Resend } from 'resend'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
+function getResend() {
+  if (!process.env.RESEND_API_KEY) return null
+  return new Resend(process.env.RESEND_API_KEY)
+}
 
 const FROM = process.env.EMAIL_FROM ?? 'My Home Support <onboarding@resend.dev>'
 
@@ -16,7 +19,7 @@ export async function sendWelcomeEmail({
   orgName: string
   trialDays?: number
 }) {
-  return resend.emails.send({
+  return getResend()?.emails.send({
     from: FROM,
     to,
     subject: `Welcome to My Home Support — your ${trialDays}-day trial has started`,
@@ -40,7 +43,7 @@ export async function sendMissedClockOutAlert({
   clockInAt: string
   hoursElapsed: number
 }) {
-  return resend.emails.send({
+  return getResend()?.emails.send({
     from: FROM,
     to,
     subject: `⚠ Missed clock-out — ${agentName} has been on-site for ${hoursElapsed}h`,
@@ -67,7 +70,7 @@ export async function sendDailySummary({
     missedClockOuts: number
   }
 }) {
-  return resend.emails.send({
+  return getResend()?.emails.send({
     from: FROM,
     to,
     subject: `Daily summary — ${orgName} — ${date}`,
