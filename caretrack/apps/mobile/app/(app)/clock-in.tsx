@@ -37,6 +37,21 @@ export default function ClockInScreen() {
     setLoading(true)
 
     try {
+      // Guard: block if there is already an active session
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Non authentifié')
+
+      const { data: existing } = await supabase
+        .from('time_entries')
+        .select('id, client_id')
+        .eq('agent_id', user.id)
+        .eq('status', 'active')
+        .limit(1)
+
+      if (existing && existing.length > 0) {
+        throw new Error('Vous avez déjà une session active. Terminez-la avant d\'en démarrer une nouvelle.')
+      }
+
       const photo = await cameraRef.current.takePictureAsync({ quality: 0.7, base64: false })
       if (!photo) throw new Error('Impossible de prendre la photo')
       setPhotoUri(photo.uri)
@@ -52,9 +67,6 @@ export default function ClockInScreen() {
       const address = geoResult
         ? `${geoResult.streetNumber || ''} ${geoResult.street || ''}, ${geoResult.city || ''}`
         : `${loc.coords.latitude.toFixed(4)}, ${loc.coords.longitude.toFixed(4)}`
-
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) throw new Error('Non authentifié')
 
       const { data: clientData } = await supabase
         .from('clients')

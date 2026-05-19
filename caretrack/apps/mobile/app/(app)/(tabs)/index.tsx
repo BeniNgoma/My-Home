@@ -67,6 +67,14 @@ export default function HomeScreen() {
   useEffect(() => { loadData() }, [loadData])
 
   function handleClockIn(client: ClientWithSession) {
+    if (activeSessions > 0) {
+      Alert.alert(
+        'Session en cours',
+        'Vous avez déjà une session active. Terminez-la avant d\'en démarrer une nouvelle.',
+        [{ text: 'OK' }]
+      )
+      return
+    }
     router.push({ pathname: '/(app)/clock-in', params: { client_id: client.id, client_name: client.full_name } })
   }
 
@@ -151,6 +159,11 @@ export default function HomeScreen() {
                 <Ionicons name="stop-circle" size={20} color="#fff" />
                 <Text style={styles.btnText}>Clock Out</Text>
               </TouchableOpacity>
+            ) : activeSessions > 0 ? (
+              <View style={[styles.clockInBtn, styles.btnBlocked]}>
+                <Ionicons name="lock-closed" size={16} color="#9CA3AF" />
+                <Text style={styles.btnTextBlocked}>Session déjà en cours</Text>
+              </View>
             ) : (
               <TouchableOpacity style={styles.clockInBtn} onPress={() => handleClockIn(item)}>
                 <Ionicons name="play-circle" size={20} color="#fff" />
@@ -220,7 +233,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
     gap: 8, borderRadius: 8, paddingVertical: 12,
   },
+  btnBlocked: { backgroundColor: '#F3F4F6' },
   btnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  btnTextBlocked: { color: '#9CA3AF', fontSize: 14, fontWeight: '600' },
   empty: { alignItems: 'center', paddingVertical: 48, gap: 12 },
   emptyText: { fontSize: 16, color: '#9CA3AF' },
 })
