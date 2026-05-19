@@ -11,15 +11,14 @@
     "web": "npm run dev --workspace=apps/web",
     "shared": "npm run build --workspace=packages/shared"
   },
-  "dependencies": {
-    "react": "18.3.1",
-    "react-dom": "18.3.1"
-  },
   "devDependencies": {
     "libsodium-wrappers": "^0.8.4",
-    "next": "14.2.3",
     "sharp": "^0.34.5",
     "tweetnacl": "^1.0.3",
     "typescript": "^5.3.3"
+  },
+  "overrides": {
+    "react": "18.2.0",
+    "react-dom": "18.2.0"
   }
 }
