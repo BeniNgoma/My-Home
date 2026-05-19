@@ -31,8 +31,10 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
   const isLoginPage = pathname === '/login'
   const isApiRoute = pathname.startsWith('/api/')
+  const isAgentRoute = pathname.startsWith('/agent')
+  const isRegisterPage = pathname === '/register'
 
-  if (!session && !isLoginPage && !isApiRoute) {
+  if (!session && !isLoginPage && !isApiRoute && !isAgentRoute && !isRegisterPage) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
