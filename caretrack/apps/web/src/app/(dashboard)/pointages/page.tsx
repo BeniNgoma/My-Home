@@ -306,7 +306,7 @@ export default function PointagesPage() {
                         }`}>{e.status}</span>
                         {e.gps_alert && <AlertTriangle size={13} className="text-amber-500" />}
                         {(e.clock_in_photo_url || e.clock_out_photo_url) && (
-                          <Camera size={13} className="text-sage-400" title="Has photos" />
+                          <Camera size={13} className="text-sage-400" />
                         )}
                       </div>
                     </td>
