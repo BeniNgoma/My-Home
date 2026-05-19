@@ -6,6 +6,9 @@ on:
     branches: [main]
     paths:
       - 'caretrack/apps/mobile/**'
+      - 'caretrack/package.json'
+      - 'caretrack/package-lock.json'
+      - 'caretrack/scripts/**'
       - '.github/workflows/eas-build.yml'
 
 jobs:
@@ -35,7 +38,7 @@ jobs:
 
       - name: Build Android APK
         working-directory: caretrack/apps/mobile
-        run: eas build --platform android --profile preview --non-interactive
+        run: eas build --platform android --profile preview --non-interactive --clear-cache
 
-      - name: Done
-        run: echo "✅ APK ready — https://expo.dev/accounts/beningoma/projects/caretrack-mobile/builds"
+      - name: APK disponible
+        run: echo "✅ APK prêt — https://expo.dev/accounts/beningoma/projects/caretrack-mobile/builds"
