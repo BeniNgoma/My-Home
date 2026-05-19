@@ -13,11 +13,11 @@ export async function POST(request: Request) {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('role')
+    .select('role, organization_id')
     .eq('id', user.id)
     .single()
 
-  if (profile?.role !== 'admin') {
+  if (!profile?.role || !['admin', 'super_admin'].includes(profile.role)) {
     return NextResponse.json({ error: 'Accès réservé aux administrateurs' }, { status: 403 })
   }
 
@@ -44,8 +44,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: authError.message }, { status: 400 })
   }
 
-  const { error: profileError } = await admin.from('profiles').upsert({
+  const { error: profileError } = await admin.from('profiles').insert({
     id: authData.user.id,
+    organization_id: profile.organization_id,
     full_name,
     email,
     phone: phone || null,

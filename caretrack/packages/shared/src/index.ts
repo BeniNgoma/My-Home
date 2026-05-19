@@ -1,9 +1,25 @@
+export interface Organization {
+  id: string
+  name: string
+  slug: string
+  plan: 'trial' | 'starter' | 'pro' | 'enterprise'
+  trial_ends_at: string
+  is_active: boolean
+  stripe_customer_id: string | null
+  stripe_subscription_id: string | null
+  max_agents: number
+  logo_url: string | null
+  created_at: string
+  updated_at: string
+}
+
 export interface Profile {
   id: string
+  organization_id: string
   full_name: string
   email: string
   phone: string | null
-  role: 'admin' | 'agent'
+  role: 'super_admin' | 'admin' | 'agent'
   hourly_rate: number
   is_active: boolean
   avatar_url: string | null
@@ -13,6 +29,7 @@ export interface Profile {
 
 export interface Client {
   id: string
+  organization_id: string
   full_name: string
   address: string | null
   phone: string | null
@@ -28,6 +45,7 @@ export interface Client {
 
 export interface AgentClientAssignment {
   id: string
+  organization_id: string
   agent_id: string
   client_id: string
   assigned_at: string
@@ -37,6 +55,7 @@ export interface AgentClientAssignment {
 
 export interface TimeEntry {
   id: string
+  organization_id: string
   agent_id: string
   client_id: string
   clock_in_at: string
@@ -60,6 +79,7 @@ export interface TimeEntry {
 
 export interface PayrollPeriod {
   id: string
+  organization_id: string
   name: string
   period_start: string
   period_end: string
@@ -89,9 +109,10 @@ export interface PayrollEntryWithRelations extends PayrollEntry {
   payroll_period?: Pick<PayrollPeriod, 'id' | 'name' | 'period_start' | 'period_end'>
 }
 
-export type UserRole = 'admin' | 'agent'
+export type UserRole = 'super_admin' | 'admin' | 'agent'
 export type TimeEntryStatus = 'active' | 'completed' | 'corrected'
 export type PayrollStatus = 'draft' | 'finalized' | 'paid'
+export type PlanType = 'trial' | 'starter' | 'pro' | 'enterprise'
 
 export function formatDuration(minutes: number | null): string {
   if (!minutes) return '—'
