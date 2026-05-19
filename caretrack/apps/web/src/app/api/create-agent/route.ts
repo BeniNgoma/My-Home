@@ -21,6 +21,22 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Accès réservé aux administrateurs' }, { status: 403 })
   }
 
+  // Fallback: fetch org_id via service role if RLS blocked it
+  let orgId = profile.organization_id
+  if (!orgId) {
+    const adminClient = createAdminClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      { auth: { autoRefreshToken: false, persistSession: false } }
+    )
+    const { data: p } = await adminClient.from('profiles').select('organization_id').eq('id', user.id).single()
+    orgId = p?.organization_id
+  }
+
+  if (!orgId) {
+    return NextResponse.json({ error: 'Organization not found for this admin' }, { status: 400 })
+  }
+
   const { full_name, email, phone, hourly_rate, password } = await request.json()
 
   if (!full_name || !email || !password) {
@@ -46,7 +62,7 @@ export async function POST(request: Request) {
 
   const { error: profileError } = await admin.from('profiles').insert({
     id: authData.user.id,
-    organization_id: profile.organization_id,
+    organization_id: orgId,
     full_name,
     email,
     phone: phone || null,
