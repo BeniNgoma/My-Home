@@ -1,0 +1,12 @@
+{
+  "crons": [
+    {
+      "path": "/api/send-alerts?type=missed_clockout",
+      "schedule": "0 * * * *"
+    },
+    {
+      "path": "/api/send-alerts?type=daily_summary",
+      "schedule": "0 18 * * *"
+    }
+  ]
+}

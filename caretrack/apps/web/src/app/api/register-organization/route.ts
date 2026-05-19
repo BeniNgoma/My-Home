@@ -1,5 +1,6 @@
 import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
+import { sendWelcomeEmail } from '@/lib/email'
 
 export async function POST(request: Request) {
   const { company_name, admin_email, admin_password, admin_full_name, plan } = await request.json()
@@ -69,6 +70,13 @@ export async function POST(request: Request) {
     await admin.from('organizations').delete().eq('id', org.id)
     return NextResponse.json({ error: profileError.message }, { status: 400 })
   }
+
+  // Send welcome email (non-blocking)
+  sendWelcomeEmail({
+    to: admin_email,
+    adminName: admin_full_name,
+    orgName: company_name,
+  }).catch(() => {})
 
   return NextResponse.json({
     success: true,
