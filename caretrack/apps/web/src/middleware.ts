@@ -29,17 +29,23 @@ export async function middleware(request: NextRequest) {
   const { data: { session } } = await supabase.auth.getSession()
 
   const { pathname } = request.nextUrl
-  const isLoginPage = pathname === '/login'
-  const isApiRoute = pathname.startsWith('/api/')
-  const isAgentRoute = pathname.startsWith('/agent')
-  const isRegisterPage = pathname === '/register'
+  const isPublic =
+    pathname === '/' ||
+    pathname === '/login' ||
+    pathname === '/register' ||
+    pathname.startsWith('/api/') ||
+    pathname.startsWith('/agent')
 
-  if (!session && !isLoginPage && !isApiRoute && !isAgentRoute && !isRegisterPage) {
+  if (!session && !isPublic) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
-  if (session && isLoginPage) {
-    return NextResponse.redirect(new URL('/', request.url))
+  if (session && pathname === '/login') {
+    return NextResponse.redirect(new URL('/dashboard', request.url))
+  }
+
+  if (session && pathname === '/') {
+    return NextResponse.redirect(new URL('/dashboard', request.url))
   }
 
   return supabaseResponse
