@@ -6,6 +6,7 @@
     "packages/*"
   ],
   "scripts": {
+    "postinstall": "node scripts/patch-native-modules.js",
     "build": "npm run build --workspace=apps/web",
     "mobile": "npm run start --workspace=apps/mobile",
     "web": "npm run dev --workspace=apps/web",
