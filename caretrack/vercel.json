@@ -1,5 +1,5 @@
 {
-  "buildCommand": "rm -rf apps/web/.next && npm run build --workspace=apps/web",
+  "buildCommand": "npm run build --workspace=apps/web",
   "outputDirectory": "apps/web/.next",
   "framework": "nextjs",
   "installCommand": "npm install",
