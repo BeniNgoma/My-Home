@@ -16,7 +16,8 @@ export async function loginAction(
 
   if (error || !data.user) return { error: 'Email ou mot de passe incorrect.' }
 
-  if (data.user.user_metadata?.role !== 'admin') {
+  const role = data.user.user_metadata?.role
+  if (role !== 'admin' && role !== 'super_admin') {
     await supabase.auth.signOut()
     return { error: 'Accès réservé aux administrateurs.' }
   }
