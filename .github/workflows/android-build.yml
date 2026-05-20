@@ -14,6 +14,8 @@ jobs:
   build:
     name: Build Android APK
     runs-on: ubuntu-22.04
+    permissions:
+      contents: write
 
     env:
       EXPO_PUBLIC_SUPABASE_URL: https://fapiaumbdonlskykvmyw.supabase.co
