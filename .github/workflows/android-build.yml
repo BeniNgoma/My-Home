@@ -1,0 +1,91 @@
+name: Build Android APK (Direct Gradle)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'caretrack/apps/mobile/**'
+      - 'caretrack/package.json'
+      - 'caretrack/package-lock.json'
+      - '.github/workflows/android-build.yml'
+
+jobs:
+  build:
+    name: Build Android APK
+    runs-on: ubuntu-22.04
+
+    env:
+      EXPO_PUBLIC_SUPABASE_URL: https://fapiaumbdonlskykvmyw.supabase.co
+      EXPO_PUBLIC_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZhcGlhdW1iZG9ubHNreWt2bXl3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc2MTI3OTAsImV4cCI6MjA5MzE4ODc5MH0.I-1ogQSJrFOe-j9sFuIdhVRAunfnFVoMBzMNluSwOcM
+      EXPO_NO_TELEMETRY: 1
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: caretrack/package-lock.json
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Install Android SDK components
+        run: |
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses 2>/dev/null || true
+          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager \
+            "platforms;android-34" \
+            "build-tools;34.0.0" \
+            "ndk;26.1.10909125"
+
+      - name: Install monorepo dependencies
+        working-directory: caretrack
+        run: npm install
+
+      - name: Generate Android project (expo prebuild)
+        working-directory: caretrack/apps/mobile
+        run: npx expo prebuild --platform android --clean --no-install
+
+      - name: Build debug APK
+        working-directory: caretrack/apps/mobile/android
+        run: ./gradlew assembleDebug --no-daemon
+        env:
+          ANDROID_NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/26.1.10909125
+
+      - name: Rename APK
+        run: |
+          mv caretrack/apps/mobile/android/app/build/outputs/apk/debug/app-debug.apk \
+             my-home-support.apk
+
+      - name: Upload APK artifact (90 jours)
+        uses: actions/upload-artifact@v4
+        with:
+          name: my-home-support-v${{ github.run_number }}
+          path: my-home-support.apk
+          retention-days: 90
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: apk-v${{ github.run_number }}
+          name: "My Home Support — APK ${{ github.run_number }}"
+          body: |
+            ## APK Android — My Home Support
+
+            **Build direct (sans EAS)** · commit `${{ github.sha }}`
+
+            ### Installation
+            1. Désinstaller l'ancienne version si elle est installée
+            2. Télécharger **my-home-support.apk** ci-dessous
+            3. Autoriser "Installer des applications inconnues" si demandé
+            4. Ouvrir l'APK et installer
+          files: my-home-support.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

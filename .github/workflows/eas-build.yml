@@ -2,14 +2,6 @@ name: EAS Build Android APK
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - 'caretrack/apps/mobile/**'
-      - 'caretrack/package.json'
-      - 'caretrack/package-lock.json'
-      - 'caretrack/scripts/**'
-      - '.github/workflows/eas-build.yml'
 
 jobs:
   build:
