@@ -10,7 +10,6 @@
     },
     "preview": {
       "distribution": "internal",
-      "channel": "preview",
       "env": {
         "EXPO_PUBLIC_SUPABASE_URL": "https://fapiaumbdonlskykvmyw.supabase.co",
         "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZhcGlhdW1iZG9ubHNreWt2bXl3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc2MTI3OTAsImV4cCI6MjA5MzE4ODc5MH0.I-1ogQSJrFOe-j9sFuIdhVRAunfnFVoMBzMNluSwOcM"
