@@ -33,17 +33,21 @@ export default function HistoryScreen() {
   const [refreshing, setRefreshing] = useState(false)
 
   const fetchHistory = useCallback(async () => {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.user) return
 
-    const { data } = await supabase
-      .from('time_entries')
-      .select('*, client:clients(id, full_name, address)')
-      .eq('agent_id', user.id)
-      .order('clock_in_at', { ascending: false })
-      .limit(100)
+      const { data } = await supabase
+        .from('time_entries')
+        .select('*, client:clients(id, full_name, address)')
+        .eq('agent_id', session.user.id)
+        .order('clock_in_at', { ascending: false })
+        .limit(100)
 
-    setEntries((data || []) as TimeEntryWithRelations[])
+      setEntries((data || []) as TimeEntryWithRelations[])
+    } catch {
+      // réseau indisponible
+    }
   }, [])
 
   const loadData = useCallback(async () => {

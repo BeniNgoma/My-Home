@@ -21,35 +21,29 @@ export default function HomeScreen() {
   const [activeSessions, setActiveSessions] = useState(0)
 
   const fetchData = useCallback(async () => {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.user) return
+      const userId = session.user.id
 
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('full_name')
-      .eq('id', user.id)
-      .single()
-    if (profile) setAgentName(profile.full_name)
+      const [profileRes, assignmentsRes, activeRes] = await Promise.all([
+        supabase.from('profiles').select('full_name').eq('id', userId).single(),
+        supabase.from('agent_client_assignments').select('client_id, clients(*)').eq('agent_id', userId).eq('is_active', true),
+        supabase.from('time_entries').select('*').eq('agent_id', userId).eq('status', 'active'),
+      ])
 
-    const { data: assignments } = await supabase
-      .from('agent_client_assignments')
-      .select('client_id, clients(*)')
-      .eq('agent_id', user.id)
-      .eq('is_active', true)
+      if (profileRes.data) setAgentName(profileRes.data.full_name)
 
-    const { data: activeEntries } = await supabase
-      .from('time_entries')
-      .select('*')
-      .eq('agent_id', user.id)
-      .eq('status', 'active')
+      const clientList: ClientWithSession[] = (assignmentsRes.data || []).map((a: any) => ({
+        ...a.clients,
+        active_entry: (activeRes.data || []).find((e: TimeEntry) => e.client_id === a.clients.id),
+      }))
 
-    const clientList: ClientWithSession[] = (assignments || []).map((a: any) => ({
-      ...a.clients,
-      active_entry: (activeEntries || []).find((e: TimeEntry) => e.client_id === a.clients.id),
-    }))
-
-    setClients(clientList)
-    setActiveSessions((activeEntries || []).length)
+      setClients(clientList)
+      setActiveSessions((activeRes.data || []).length)
+    } catch {
+      // réseau indisponible — on garde l'état actuel
+    }
   }, [])
 
   const loadData = useCallback(async () => {

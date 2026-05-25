@@ -31,8 +31,9 @@ export default function RootLayout() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Timeout de sécurité absolu — l'app démarre dans tous les cas
-    const timer = setTimeout(() => setLoading(false), 3000)
+    // getSession lit depuis SecureStore (local) — devrait être < 1s
+    // Timeout 8s au cas où SecureStore est lent
+    const timer = setTimeout(() => setLoading(false), 8000)
 
     supabase.auth.getSession()
       .then(({ data }) => {
