@@ -6,6 +6,7 @@ import {
 import { useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { supabase } from '../../../lib/supabase'
+import { useAuth } from '../../../lib/auth-context'
 import type { Client, TimeEntry } from '../../../lib/shared'
 
 interface ClientWithSession extends Client {
@@ -14,6 +15,7 @@ interface ClientWithSession extends Client {
 
 export default function HomeScreen() {
   const router = useRouter()
+  const { session } = useAuth()
   const [clients, setClients] = useState<ClientWithSession[]>([])
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
@@ -22,7 +24,6 @@ export default function HomeScreen() {
 
   const fetchData = useCallback(async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession()
       if (!session?.user) return
       const userId = session.user.id
 
@@ -44,7 +45,7 @@ export default function HomeScreen() {
     } catch {
       // réseau indisponible — on garde l'état actuel
     }
-  }, [])
+  }, [session])
 
   const loadData = useCallback(async () => {
     setLoading(true)

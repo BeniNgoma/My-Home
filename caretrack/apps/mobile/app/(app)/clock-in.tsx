@@ -8,6 +8,7 @@ import { CameraView, useCameraPermissions } from 'expo-camera'
 import * as Location from 'expo-location'
 import * as FileSystem from 'expo-file-system'
 import { supabase } from '../../lib/supabase'
+import { useAuth } from '../../lib/auth-context'
 import { haversineDistance } from '../../lib/shared'
 
 const GPS_ALERT_THRESHOLD_METERS = 500
@@ -22,6 +23,7 @@ function base64ToUint8Array(base64: string): Uint8Array {
 export default function ClockInScreen() {
   const { client_id, client_name } = useLocalSearchParams<{ client_id: string; client_name: string }>()
   const router = useRouter()
+  const { session } = useAuth()
   const cameraRef = useRef<CameraView>(null)
   const [permission, requestPermission] = useCameraPermissions()
   const [photoUri, setPhotoUri] = useState<string | null>(null)
@@ -37,8 +39,6 @@ export default function ClockInScreen() {
     setLoading(true)
 
     try {
-      // Guard: block if there is already an active session
-      const { data: { session } } = await supabase.auth.getSession()
       const user = session?.user
       if (!user) throw new Error('Non authentifié')
 

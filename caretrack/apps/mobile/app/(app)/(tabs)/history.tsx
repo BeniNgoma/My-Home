@@ -5,6 +5,7 @@ import {
 } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { supabase } from '../../../lib/supabase'
+import { useAuth } from '../../../lib/auth-context'
 import { formatDuration } from '../../../lib/shared'
 import type { TimeEntryWithRelations } from '../../../lib/shared'
 
@@ -28,13 +29,13 @@ function formatDateTime(iso: string): string {
 }
 
 export default function HistoryScreen() {
+  const { session } = useAuth()
   const [entries, setEntries] = useState<TimeEntryWithRelations[]>([])
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
 
   const fetchHistory = useCallback(async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession()
       if (!session?.user) return
 
       const { data } = await supabase
@@ -48,7 +49,7 @@ export default function HistoryScreen() {
     } catch {
       // réseau indisponible
     }
-  }, [])
+  }, [session])
 
   const loadData = useCallback(async () => {
     setLoading(true)
