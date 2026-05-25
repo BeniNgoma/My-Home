@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Stack } from 'expo-router'
-import { useRouter, useSegments } from 'expo-router'
+import { Stack, useRouter, useSegments, useRootNavigationState } from 'expo-router'
 import { supabase } from '../lib/supabase'
 import type { Session } from '@supabase/supabase-js'
 import { View, ActivityIndicator } from 'react-native'
@@ -8,15 +7,19 @@ import { View, ActivityIndicator } from 'react-native'
 function RootLayoutNav({ session }: { session: Session | null }) {
   const segments = useSegments()
   const router = useRouter()
+  const navigationState = useRootNavigationState()
 
   useEffect(() => {
+    // Attendre que la navigation soit prête
+    if (!navigationState?.key) return
+
     const inAuthGroup = segments[0] === '(auth)'
     if (!session && !inAuthGroup) {
       router.replace('/(auth)/login')
     } else if (session && inAuthGroup) {
       router.replace('/(app)/(tabs)/')
     }
-  }, [session, segments])
+  }, [session, segments, navigationState?.key])
 
   return (
     <Stack screenOptions={{ headerShown: false }}>
@@ -31,24 +34,14 @@ export default function RootLayout() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // getSession lit depuis SecureStore (local) — devrait être < 1s
-    // Timeout 8s au cas où SecureStore est lent
-    const timer = setTimeout(() => setLoading(false), 8000)
-
-    supabase.auth.getSession()
-      .then(({ data }) => {
-        clearTimeout(timer)
-        setSession(data.session)
-        setLoading(false)
-      })
-      .catch(() => {
-        clearTimeout(timer)
-        setLoading(false)
-      })
-
+    // onAuthStateChange se déclenche immédiatement avec la session courante
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => {
       setSession(s)
+      setLoading(false)
     })
+
+    // Sécurité : si onAuthStateChange ne répond pas dans 5s, on débloque quand même
+    const timer = setTimeout(() => setLoading(false), 5000)
 
     return () => {
       clearTimeout(timer)
